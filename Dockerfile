@@ -45,4 +45,4 @@ USER user
 EXPOSE 8000
 
 # Default command
-cMD [ "fastapi", "run", "./main.py", "--proxy-headers", "--port", "8000" ]
+CMD [ "fastapi", "run", "./main.py", "--proxy-headers", "--port", "8000" ]
