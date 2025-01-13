@@ -29,9 +29,9 @@ services:
       - caddy_config:/config
     networks:
       - backend
-#    environment:
-#      - CADDY_DOCKER_GEN=false
-#
+    environment:
+      - CADDY_DOCKER_GEN=true
+
 # Define networks for internal communication
 networks:
   backend:
