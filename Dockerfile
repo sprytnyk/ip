@@ -1,4 +1,4 @@
-FROM python:3.13-slim-book
+FROM python:3.13-slim-bookworm
 
 LABEL maintainer="Vladyslav Krylasov <vladyslav.krylasov@gmail.com>"
 
@@ -13,24 +13,24 @@ RUN groupadd --system user && \
     useradd -g user --create-home --shell /bin/bash user
 
 # Set environment variables
-ENV HOME="/home/user" \
-    APP="${HOME}/app" \
-    PATH="${HOME}/.local/bin:${PATH}" \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONOPTIMIZE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONFAULTHANDLER=1
+ENV HOME="/home/user"
+ENV APP="${HOME}/app"
+ENV PATH="${HOME}/.local/bin:${PATH}"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONOPTIMIZE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONFAULTHANDLER=1
 
 # Create application directory with proper permissions
 RUN mkdir -p "${APP}" && chown user:user "${APP}"
 WORKDIR "${APP}"
 
 # Copy only the necessary files for installation first (use caching)
-COPY ./conf/ /conf/
+COPY ./requirements.txt ./requirements.txt
 
 # Upgrade pip and install dependencies as the non-root user
-RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-    python3 -m pip install --no-cache-dir -r ./conf/requirements.txt
+RUN python -m pip install --no-cache-dir --upgrade pip && \
+    python -m pip install --no-cache-dir -r "${APP}/requirements.txt"
 
 # Copy the remaining application code
 COPY . .
@@ -45,4 +45,4 @@ USER user
 EXPOSE 8000
 
 # Default command
-CMD ["fastapi", "run", "app/main.py", "--proxy-headers", "--port", "8000"]
+cMD [ "fastapi", "run", "./main.py", "--proxy-headers", "--port", "8000" ]

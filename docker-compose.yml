@@ -1,0 +1,43 @@
+services:
+  # FastAPI service (API)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile  # Path to your Dockerfile
+    container_name: api_service
+    ports:
+      - "8000:8000"  # Expose FastAPI's port for internal communication
+    volumes:
+      - ./db.mmdb:/home/user/app/db.mmdb  # Mount the db.mmdb file
+    networks:
+      - backend
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - caddy  # Wait for Caddy to be ready before starting API
+
+  # Caddy service (Reverse Proxy)
+  caddy:
+    image: caddy:2
+    container_name: caddy_service
+    ports:
+      - "80:80"   # HTTP port
+      - "443:443" # HTTPS port
+    volumes:
+      - ./conf/Caddyfile:/etc/caddy/Caddyfile  # Mount your Caddyfile
+      - caddy_data:/data  # Persistent storage for Caddy (SSL certs, etc.)
+      - caddy_config:/config
+    networks:
+      - backend
+#    environment:
+#      - CADDY_DOCKER_GEN=false
+#
+# Define networks for internal communication
+networks:
+  backend:
+    driver: bridge
+
+# Volumes for persistent storage
+volumes:
+  caddy_data:
+  caddy_config:
