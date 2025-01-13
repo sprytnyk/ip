@@ -7,22 +7,16 @@ from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError
 from pydantic import BaseModel
 
+# Path to GeoIP database
+GEOIP_DB_PATH = "./db.mmdb"
+
 app = FastAPI(
     docs_url="/docs/",
     redoc_url="/redoc/"
 )
 
-# Path to GeoIP database
-GEOIP_DB_PATH = "./db.mmdb"
-
 # Mount the static directory to serve the favicon
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-# Route to serve the favicon.ico
-@app.get("/favicon.ico")
-async def favicon():
-    return RedirectResponse(url="/static/favicon.ico")
 
 
 # Define the ClientLocationResponse model
@@ -83,6 +77,12 @@ def lookup_ip(ip: str) -> ClientLocationResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while processing the request.",
         )
+
+
+# Route to serve the favicon.ico
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return RedirectResponse(url="/static/favicon.ico")
 
 
 # Route to get the requester's location details
