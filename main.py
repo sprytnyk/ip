@@ -7,7 +7,10 @@ from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError
 from pydantic import BaseModel
 
-app = FastAPI()
+app = FastAPI(
+    docs_url="/docs/",
+    redoc_url="/redoc/"
+)
 
 # Path to GeoIP database
 GEOIP_DB_PATH = "./db.mmdb"
