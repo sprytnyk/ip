@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Information</title>
+    <style>
+        /* General styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #1a73e8;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table th, table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #e4e4e4;
+        }
+
+        table th {
+            background: #1a73e8;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        table tr:nth-child(odd) {
+            background-color: #f9fbff;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+
+        table tr:hover {
+            background-color: #eef4ff;
+        }
+
+        /* Mobile responsiveness */
+        @media screen and (max-width: 768px) {
+            table th, table td {
+                font-size: 14px;
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.25rem;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+
+        /* Footer styles */
+        .footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #555;
+            margin-top: 20px;
+        }
+
+        .footer a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>IP Information</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>IP Address</td>
+                    <td>{{ data.ip }}</td>
+                </tr>
+                <tr>
+                    <td>Country</td>
+                    <td>{{ data.country }}</td>
+                </tr>
+                <tr>
+                    <td>City</td>
+                    <td>{{ data.city }}</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="footer">
+            Data provided by <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer">MaxMind GeoIP Lite</a>.
+            <br>
+            View the <a href="/docs" target="_blank" rel="noopener noreferrer">API Documentation</a>.
+        </div>
+    </div>
+</body>
+</html>

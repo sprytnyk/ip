@@ -1,8 +1,9 @@
 import os
 
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError
 from pydantic import BaseModel
@@ -10,13 +11,13 @@ from pydantic import BaseModel
 # Path to GeoIP database
 GEOIP_DB_PATH = "./db.mmdb"
 
-app = FastAPI(
-    docs_url="/docs/",
-    redoc_url="/redoc/"
-)
+app = FastAPI(docs_url="/docs/", redoc_url="/redoc/")
 
 # Mount the static directory to serve the favicon
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Setup Jinja2 template directory
+templates = Jinja2Templates(directory="templates")
 
 
 # Define the ClientLocationResponse model
@@ -85,8 +86,36 @@ async def favicon():
     return RedirectResponse(url="/static/favicon.ico")
 
 
+# Route to render the HTML page with location details
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def display_client_location(request: Request):
+    """
+    Get the location details of the client making the request and display them
+    in an HTML template.
+    - If GeoIP database not found, returns status 500.
+    - If IP address lookup fails, raises status 404.
+    """
+    try:
+        # Get the client's IP address
+        client_ip = get_client_ip(request)
+        # Perform IP lookup
+        location_data = lookup_ip(client_ip)
+        # Render the HTML template with location data
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "data": location_data.dict()}
+        )
+    except HTTPException as e:
+        # Render an error template or return an error response (if needed)
+        return templates.TemplateResponse(
+            "error.html",
+            {"request": request, "detail": e.detail, "status_code": e.status_code},
+            status_code=e.status_code,
+        )
+
+
 # Route to get the requester's location details
-@app.get("/", response_model=ClientLocationResponse, status_code=status.HTTP_200_OK)
+@app.get("/api/", response_model=ClientLocationResponse, status_code=status.HTTP_200_OK)
 async def get_requester_ip(request: Request) -> ClientLocationResponse:
     """
     Get the location details of the client making the request.
@@ -101,7 +130,7 @@ async def get_requester_ip(request: Request) -> ClientLocationResponse:
 
 # Route to get location details for a specific IP address
 @app.get(
-    "/{ip}/", response_model=ClientLocationResponse, status_code=status.HTTP_200_OK
+    "/api/{ip}/", response_model=ClientLocationResponse, status_code=status.HTTP_200_OK
 )
 async def get_ip_location(ip: str) -> ClientLocationResponse:
     """
