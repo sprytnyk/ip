@@ -1,5 +1,4 @@
 import os
-
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -8,34 +7,53 @@ from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError
 from pydantic import BaseModel
 
-# Path to GeoIP database
-GEOIP_DB_PATH = "./db.mmdb"
+# Paths to GeoIP databases
+GEOIP_CITY_DB_PATH = "./city.mmdb"
+GEOIP_ASN_DB_PATH = "./asn.mmdb"
 
-app = FastAPI(docs_url="/docs/", redoc_url="/redoc/")
+app = FastAPI(
+    title="IP Location API",
+    description=(
+        "This API provides the geographical location of an IP address. "
+        "It returns the country, city, and IP address information for both "
+        "the client's IP or a specific IP address."
+    ),
+    docs_url="/docs/",
+    redoc_url="/redoc/",
+)
 
-# Mount the static directory to serve the favicon
+# Mount the static directory to serve static files (like favicon)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Setup Jinja2 template directory
 templates = Jinja2Templates(directory="templates")
 
 
-# Define the ClientLocationResponse model
+# Define the response model for the client's location
 class ClientLocationResponse(BaseModel):
     country: str
     city: str
     ip: str
+    org: str
 
 
-# Function to get client IP address
+# Define the error message model
+class Message(BaseModel):
+    detail: str
+
+
+# Function to retrieve the client's IP address from the request headers
 def get_client_ip(request: Request) -> str:
     """
-    Extracts the client's IP address from headers or the request object.
+    Extracts the client's IP address from headers or request object.
+    Checks 'X-Forwarded-For' and 'X-Real-IP' headers for the public IP.
+    Falls back to the proxy IP if those headers are not found.
     """
     x_forwarded_for = request.headers.get("X-Forwarded-For")
     x_real_ip = request.headers.get("X-Real-IP")
+
     if x_forwarded_for:
-        # The first IP in the list is the public client IP
+        # Return the first IP in the list (client's real IP)
         return x_forwarded_for.split(",")[0].strip()
     elif x_real_ip:
         return x_real_ip
@@ -44,35 +62,54 @@ def get_client_ip(request: Request) -> str:
         return request.client.host
 
 
-# Function to look up geographic data for an IP address
+# Function to perform the IP lookup and return location details
 def lookup_ip(ip: str) -> ClientLocationResponse:
     """
-    Looks up geographic data for the given IP address using the GeoIP database.
+    Looks up geographic and ASN data for the provided IP address.
+    Retrieves data from the GeoIP City and ASN databases.
+
+    Args:
+        ip (str): The IP address to lookup.
+
+    Returns:
+        ClientLocationResponse: Contains country, city, organisation, and IP.
+
+    Raises:
+        HTTPException: If the IP is not found or an internal error occurs.
     """
-    # Verify the GeoIP database file exists
-    if not os.path.exists(GEOIP_DB_PATH):
+    # Ensure that the GeoIP ASN database exists
+    if not os.path.exists(GEOIP_ASN_DB_PATH) or not os.path.exists(GEOIP_CITY_DB_PATH):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="GeoIP database not found.",
         )
 
     try:
-        # Open the GeoIP database and fetch location data
-        with Reader(GEOIP_DB_PATH) as reader:
-            metadata = reader.city(ip)
-            return ClientLocationResponse(
-                country=metadata.country.name or "Unknown",
-                city=metadata.city.name or "Unknown",
-                ip=ip,
-            )
+        # Open the ASN database and retrieve ASN data
+        with Reader(GEOIP_ASN_DB_PATH) as asn_db:
+            asn = asn_db.asn(ip)
+
+        # Open the City database and retrieve location data
+        with Reader(GEOIP_CITY_DB_PATH) as city_db:
+            metadata = city_db.city(ip)
+
+        # Return the combined location and ASN data
+        return ClientLocationResponse(
+            country=metadata.country.name or "Unknown",
+            city=metadata.city.name or "Unknown",
+            ip=ip,
+            org=asn.autonomous_system_organization or "Unknown",
+        )
+
     except AddressNotFoundError:
-        # Handle cases where the IP is not found in the database
+        # Raise a 404 if the IP is not found in the database
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"IP address {ip} not found in GeoIP database.",
         )
+
     except Exception as e:
-        # Log the error and return a generic server error
+        # Catch any unexpected errors and log them
         print(f"Error looking up IP {ip}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -83,30 +120,33 @@ def lookup_ip(ip: str) -> ClientLocationResponse:
 # Route to serve the favicon.ico
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return RedirectResponse(url="/static/favicon.ico")
+    """
+    Serves the favicon.ico file. Returns a temporary redirect.
+    """
+    return RedirectResponse(
+        url="/static/favicon.ico", status_code=status.HTTP_307_TEMPORARY_REDIRECT
+    )
 
 
-# Route to render the HTML page with location details
+# Route to render an HTML page with location details for the client
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def display_client_location(request: Request):
     """
-    Get the location details of the client making the request and display them
-    in an HTML template.
-    - If GeoIP database not found, returns status 500.
-    - If IP address lookup fails, raises status 404.
+    Renders an HTML page displaying the client's geographical location.
+    If the GeoIP database is not found, returns a status 500 error.
+    If the IP lookup fails, a 404 error is returned.
     """
     try:
-        # Get the client's IP address
+        # Get the client's IP address (hardcoded example for testing)
         client_ip = get_client_ip(request)
-        # Perform IP lookup
+        # Perform the lookup using the provided IP address
         location_data = lookup_ip(client_ip)
-        # Render the HTML template with location data
+        # Render the HTML template with the location data
         return templates.TemplateResponse(
-            "index.html",
-            {"request": request, "data": location_data.dict()}
+            "index.html", {"request": request, "data": location_data.dict()}
         )
     except HTTPException as e:
-        # Render an error template or return an error response (if needed)
+        # If an error occurs, render the error template with the error details
         return templates.TemplateResponse(
             "error.html",
             {"request": request, "detail": e.detail, "status_code": e.status_code},
@@ -114,29 +154,77 @@ async def display_client_location(request: Request):
         )
 
 
-# Route to get the requester's location details
-@app.get("/api/", response_model=ClientLocationResponse, status_code=status.HTTP_200_OK)
+# Route to get location details for the requester's IP address
+@app.get(
+    "/api/",
+    response_model=ClientLocationResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "model": Message,
+            "description": "IP address not found in the GeoIP database",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": Message,
+            "description": "An internal server error occurred while processing the request",
+        },
+        status.HTTP_200_OK: {
+            "description": "Location details retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "country": "Ukraine",
+                        "city": "Kropyvnytskyi",
+                        "ip": "192.168.1.1",
+                        "org": "Example ASN Organisation",
+                    }
+                }
+            },
+        },
+    },
+)
 async def get_requester_ip(request: Request) -> ClientLocationResponse:
     """
-    Get the location details of the client making the request.
-    - Returns the country, city, and IP address of the client.
-    - If GeoIP database not found, returns status 500.
-    - If IP address lookup fails, returns status 404.
+    Fetches the geographical location details of the client making the request.
+    Returns the country, city, and organisation along with the client's IP address.
+    If GeoIP database or IP lookup fails, a 404 or 500 error will be raised.
     """
-    # Get the client's IP address
+    # Retrieve the client's IP address
     client_ip = get_client_ip(request)
     return lookup_ip(client_ip)
 
 
 # Route to get location details for a specific IP address
 @app.get(
-    "/api/{ip}/", response_model=ClientLocationResponse, status_code=status.HTTP_200_OK
+    "/api/{ip}/",
+    response_model=ClientLocationResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "model": Message,
+            "description": "IP address not found in the GeoIP database",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": Message,
+            "description": "Internal server error occurred while processing the request",
+        },
+        status.HTTP_200_OK: {
+            "description": "Location details retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "country": "Ukraine",
+                        "city": "Kropyvnytskyi",
+                        "ip": "192.168.1.1",
+                        "org": "Example ASN Organisation",
+                    }
+                }
+            },
+        },
+    },
 )
 async def get_ip_location(ip: str) -> ClientLocationResponse:
     """
-    Get the location details for a specific IP address.
-    - Returns the country, city, and IP address for the given IP.
-    - If the IP is not found in the GeoIP database, returns status 404.
-    - If GeoIP database not found, returns status 500.
+    Fetches geographical and ASN details for a specific IP address.
+    If IP is not found in the GeoIP database, a 404 error is raised.
+    If an internal error occurs, a 500 error is raised.
     """
     return lookup_ip(ip)
