@@ -8,7 +8,8 @@ services:
     ports:
       - "8000:8000"  # Expose FastAPI's port for internal communication
     volumes:
-      - ./db.mmdb:/home/user/app/db.mmdb  # Mount the db.mmdb file
+      - ./city.mmdb:/home/user/app/city.mmdb
+      - ./asn.mmdb:/home/user/app/asn.mmdb
     networks:
       - backend
     environment:
