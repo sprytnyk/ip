@@ -5,8 +5,6 @@ services:
       context: .
       dockerfile: Dockerfile  # Path to your Dockerfile
     container_name: api_service
-    ports:
-      - "8000:8000"  # Expose FastAPI's port for internal communication
     volumes:
       - ./city.mmdb:/home/user/app/city.mmdb
       - ./asn.mmdb:/home/user/app/asn.mmdb
