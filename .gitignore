@@ -350,6 +350,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # Maxmind
-db.mmdb
+city.mmdb
+asn.mmdb
 
 # End of https://www.toptal.com/developers/gitignore/api/vim,osx,emacs,linux,macos,windows,pycharm,virtualenv,pythonvanilla
