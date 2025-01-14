@@ -156,7 +156,7 @@ async def display_client_location(request: Request):
 
 # Route to get location details for the requester's IP address
 @app.get(
-    "/api/",
+    "/api/ip/",
     response_model=ClientLocationResponse,
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -195,7 +195,7 @@ async def get_requester_ip(request: Request) -> ClientLocationResponse:
 
 # Route to get location details for a specific IP address
 @app.get(
-    "/api/{ip}/",
+    "/api/ip/{ip}/",
     response_model=ClientLocationResponse,
     responses={
         status.HTTP_404_NOT_FOUND: {
