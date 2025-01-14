@@ -9,4 +9,3 @@ ip.sprytnyk.dev {
     # Reverse proxy requests to your backend (on localhost:8000)
     reverse_proxy api:8000
 }
-
