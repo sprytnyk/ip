@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/static/site.webmanifest">
+
+    <!-- Favicons -->
+    <link rel="icon" href="/static/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/static/favicon-16x16.png" sizes="16x16">
+    <link rel="icon" type="image/png" href="/static/favicon-32x32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+
+    <!-- Meta Tags for App Branding -->
+    <meta name="theme-color" content="#ffffff">
+    <meta name="background-color" content="#ffffff">
+
+    <style>
+        /* General styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f4f6;
+            color: #2d3748;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 25px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            color: #e53e3e;
+            margin-bottom: 25px;
+        }
+
+        p {
+            font-size: 1rem;
+            color: #4a5568;
+            margin-bottom: 15px;
+        }
+
+        .error-details {
+            font-size: 0.95rem;
+            color: #718096;
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .footer {
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-top: 20px;
+        }
+
+        .footer a {
+            color: #2b6cb0;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Mobile responsiveness */
+        @media screen and (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Error</h1>
+        <p>Something went wrong while processing your request.</p>
+        <div class="error-details">
+            <p><strong>Status Code:</strong> {{ status_code }}</p>
+            <p><strong>Details:</strong> {{ detail }}</p>
+        </div>
+        <p>Please try again later.</p>
+        <div class="footer">
+            Return to the <a href="/">homepage</a> or view the <a href="/docs" target="_blank" rel="noopener noreferrer">API Documentation</a>.
+        </div>
+    </div>
+</body>
+</html>
