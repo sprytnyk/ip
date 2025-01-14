@@ -3,32 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IP Information</title>
+    <title>What's my IP</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/static/site.webmanifest">
+
+    <!-- Favicons -->
+    <link rel="icon" href="/static/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/static/favicon-16x16.png" sizes="16x16">
+    <link rel="icon" type="image/png" href="/static/favicon-32x32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+
+    <!-- Meta Tags for App Branding -->
+    <meta name="theme-color" content="#ffffff">
+    <meta name="background-color" content="#ffffff">
+
     <style>
         /* General styles */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f5f7fa;
-            color: #333;
+            background-color: #f3f4f6;
+            color: #2d3748;
         }
 
         .container {
-            max-width: 480px;
-            margin: 20px auto;
-            padding: 20px;
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 25px;
             background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
         h1 {
             text-align: center;
-            font-size: 1.5rem;
-            color: #1a73e8;
-            margin-bottom: 20px;
+            font-size: 1.75rem;
+            color: #2b6cb0;
+            margin-bottom: 25px;
         }
 
         table {
@@ -39,18 +53,18 @@
 
         table th, table td {
             text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #e4e4e4;
+            padding: 14px;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         table th {
-            background: #1a73e8;
+            background: #2b6cb0;
             color: #ffffff;
-            font-weight: 600;
+            font-weight: bold;
         }
 
         table tr:nth-child(odd) {
-            background-color: #f9fbff;
+            background-color: #f7fafc;
         }
 
         table tr:nth-child(even) {
@@ -58,7 +72,25 @@
         }
 
         table tr:hover {
-            background-color: #eef4ff;
+            background-color: #ebf8ff;
+        }
+
+        /* Footer styles */
+        .footer {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-top: 20px;
+        }
+
+        .footer a {
+            color: #2b6cb0;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
         }
 
         /* Mobile responsiveness */
@@ -69,35 +101,18 @@
             }
 
             h1 {
-                font-size: 1.25rem;
+                font-size: 1.5rem;
             }
 
             .container {
-                padding: 15px;
+                padding: 20px;
             }
-        }
-
-        /* Footer styles */
-        .footer {
-            text-align: center;
-            font-size: 0.85rem;
-            color: #555;
-            margin-top: 20px;
-        }
-
-        .footer a {
-            color: #1a73e8;
-            text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>IP Information</h1>
+        <h1>What's my IP</h1>
         <table>
             <thead>
                 <tr>
@@ -121,7 +136,7 @@
             </tbody>
         </table>
         <div class="footer">
-            Data provided by <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer">MaxMind GeoIP Lite</a>.
+            Data provided by <a href="https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/" target="_blank" rel="noopener noreferrer">MaxMind GeoIP2 Lite</a>.
             <br>
             View the <a href="/docs" target="_blank" rel="noopener noreferrer">API Documentation</a>.
         </div>
