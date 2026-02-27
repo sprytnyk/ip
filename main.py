@@ -32,6 +32,7 @@ templates = Jinja2Templates(directory="templates")
 # Define the response model for the client's location
 class ClientLocationResponse(BaseModel):
     country: str
+    iso_code: str
     city: str
     ip: str
     org: str
@@ -96,6 +97,7 @@ def lookup_ip(ip: str) -> ClientLocationResponse:
         # Return the combined location and ASN data
         return ClientLocationResponse(
             country=metadata.country.name or "Unknown",
+            iso_code=metadata.country.iso_code or "Unknown",
             city=metadata.city.name or "Unknown",
             ip=ip,
             org=asn.autonomous_system_organization or "Unknown",
@@ -173,6 +175,7 @@ async def display_client_location(request: Request):
                 "application/json": {
                     "example": {
                         "country": "Ukraine",
+                        "iso_code": "UA",
                         "city": "Kropyvnytskyi",
                         "ip": "192.168.1.1",
                         "org": "Example ASN Organisation",
@@ -212,6 +215,7 @@ async def get_requester_ip(request: Request) -> ClientLocationResponse:
                 "application/json": {
                     "example": {
                         "country": "Ukraine",
+                        "iso_code": "UA",
                         "city": "Kropyvnytskyi",
                         "ip": "192.168.1.1",
                         "org": "Example ASN Organisation",
