@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error</title>
+    <title>Error - IP Checker</title>
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/static/site.webmanifest">
@@ -15,91 +15,230 @@
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 
     <!-- Meta Tags for App Branding -->
-    <meta name="theme-color" content="#121212">
-    <meta name="background-color" content="#121212">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="background-color" content="#0f172a">
 
     <style>
-        /* General styles */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        *, *::before, *::after {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            background-color: #121212;
-            color: #e2e2e2;
         }
 
-        .container {
-            max-width: 500px;
-            margin: 30px auto;
-            padding: 25px;
-            background: #1e1e1e;
-            border-radius: 12px;
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
+        body {
+            font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a);
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        .page {
+            max-width: 42rem;
+            margin: 0 auto;
+            padding: 4rem 1rem;
+        }
+
+        .header {
             text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .icon-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 5rem;
+            height: 5rem;
+            background-color: #e11d48;
+            border-radius: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .icon-box svg {
+            width: 2.5rem;
+            height: 2.5rem;
+            color: #fff;
         }
 
         h1 {
-            font-size: 1.75rem;
-            color: #f87171; /* Light red */
-            margin-bottom: 25px;
+            font-size: 3rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1rem;
+            line-height: 1;
         }
 
-        p {
+        .subtitle {
+            font-size: 1.125rem;
+            color: #94a3b8;
+        }
+
+        .card {
+            background-color: #1e293b;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 2rem;
+            border: 1px solid #334155;
+            margin-bottom: 2rem;
+        }
+
+        .info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: rgba(51, 65, 85, 0.5);
+            border-radius: 0.75rem;
+            transition: background-color 0.15s ease;
+        }
+
+        .info-row:hover {
+            background-color: #334155;
+        }
+
+        .row-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .row-icon svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        .row-icon.rose { background-color: rgba(244, 63, 94, 0.2); }
+        .row-icon.rose svg { color: #fb7185; }
+
+        .row-icon.amber { background-color: rgba(245, 158, 11, 0.2); }
+        .row-icon.amber svg { color: #fbbf24; }
+
+        .row-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .row-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 0.25rem;
+        }
+
+        .row-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #fff;
+            word-break: break-all;
+        }
+
+        .message {
+            text-align: center;
             font-size: 1rem;
-            color: #cbd5e1; /* Grayish text */
-            margin-bottom: 15px;
-        }
-
-        .error-details {
-            font-size: 0.95rem;
-            color: #e2e8f0;
-            background: #2d3748; /* Darker gray for error box */
-            padding: 10px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border: 1px solid #4a5568; /* Subtle border */
+            color: #94a3b8;
+            margin-bottom: 2rem;
         }
 
         .footer {
-            font-size: 0.9rem;
-            color: #cbd5e1;
-            margin-top: 20px;
+            text-align: center;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            line-height: 1.8;
         }
 
         .footer a {
-            color: #63b3ed; /* Light blue */
+            color: #60a5fa;
             text-decoration: none;
-            font-weight: 500;
+            transition: color 0.15s ease;
         }
 
         .footer a:hover {
-            text-decoration: underline;
+            color: #93c5fd;
         }
 
-        /* Mobile responsiveness */
-        @media screen and (max-width: 768px) {
-            h1 {
-                font-size: 1.5rem;
-            }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-            .container {
-                padding: 20px;
-            }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out;
+        }
+
+        @media screen and (max-width: 640px) {
+            h1 { font-size: 2.25rem; }
+            .card { padding: 1.25rem; }
+            .row-value { font-size: 1.1rem; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Error</h1>
-        <p>Something went wrong while processing your request.</p>
-        <div class="error-details">
-            <p><strong>Status Code:</strong> {{ status_code }}</p>
-            <p><strong>Details:</strong> {{ detail }}</p>
+    <div class="page">
+        <div class="header">
+            <div class="icon-box">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" x2="12" y1="8" y2="12"></line>
+                    <line x1="12" x2="12.01" y1="16" y2="16"></line>
+                </svg>
+            </div>
+            <h1>Error</h1>
+            <p class="subtitle">Something went wrong while processing your request</p>
         </div>
-        <p>Please try again later.</p>
+
+        <div class="card">
+            <div class="info-list animate-fade-in">
+                <!-- Status Code -->
+                <div class="info-row">
+                    <div class="row-icon rose">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" x2="20" y1="9" y2="9"></line>
+                            <line x1="4" x2="20" y1="15" y2="15"></line>
+                            <line x1="10" x2="8" y1="3" y2="21"></line>
+                            <line x1="16" x2="14" y1="3" y2="21"></line>
+                        </svg>
+                    </div>
+                    <div class="row-content">
+                        <p class="row-label">Status Code</p>
+                        <p class="row-value">{{ status_code }}</p>
+                    </div>
+                </div>
+
+                <!-- Details -->
+                <div class="info-row">
+                    <div class="row-icon amber">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                            <line x1="12" x2="12" y1="9" y2="13"></line>
+                            <line x1="12" x2="12.01" y1="17" y2="17"></line>
+                        </svg>
+                    </div>
+                    <div class="row-content">
+                        <p class="row-label">Details</p>
+                        <p class="row-value">{{ detail }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="message">Please try again later.</p>
+
         <div class="footer">
-            Return to the <a href="/">homepage</a> or view the <a href="/docs" target="_blank" rel="noopener noreferrer">API Documentation</a>.
+            <p>Return to the <a href="/">homepage</a> or view the <a href="/docs" target="_blank" rel="noopener noreferrer">API Documentation</a>.</p>
         </div>
     </div>
 </body>
