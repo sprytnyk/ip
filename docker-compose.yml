@@ -35,6 +35,10 @@ services:
 networks:
   backend:
     driver: bridge
+    # Give the proxy a native IPv6 endpoint. Without this, Docker's userland
+    # proxy translates IPv6 connections to the container's IPv4 address and
+    # Caddy sees the bridge gateway (for example, 172.18.0.1) as the client.
+    enable_ipv6: true
 
 # Volumes for persistent storage
 volumes:
