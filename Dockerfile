@@ -4,8 +4,8 @@ LABEL maintainer="Vladyslav Krylasov <vladyslav.krylasov@gmail.com>"
 
 # Install security upgrades and clean up afterwards
 RUN apt-get update && \
-	apt-get -y upgrade && \
-	apt-get clean && \
+    apt-get -y upgrade && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user and group
@@ -15,28 +15,24 @@ RUN groupadd --system user && \
 # Set environment variables
 ENV HOME="/home/user"
 ENV APP="${HOME}/app"
-ENV PATH="${HOME}/.local/bin:${PATH}"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONOPTIMIZE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONFAULTHANDLER=1
 
-# Create application directory with proper permissions
-RUN mkdir -p "${APP}" && chown user:user "${APP}"
 WORKDIR "${APP}"
 
-# Copy only the necessary files for installation first (use caching)
+# Copy only the necessary files for installation fir
 COPY ./requirements.txt ./requirements.txt
 
-# Upgrade pip and install dependencies as the non-root user
 RUN python -m pip install --no-cache-dir --upgrade pip && \
-    python -m pip install --no-cache-dir -r "${APP}/requirements.txt"
+    python -m pip install --no-cache-dir -r requirem
 
-# Copy the remaining application code
-COPY . .
-
-# Ensure all files are owned by the non-root user
-RUN chown -R user:user "${APP}"
+# Copy only what the app needs: no .mmdb files, comp
+# Files stay owned by root, so the app user can read
+COPY main.py ./
+COPY templates ./templates
+COPY static ./static
 
 # Switch to the non-root user
 USER user
@@ -45,4 +41,4 @@ USER user
 EXPOSE 8000
 
 # Default command
-CMD [ "fastapi", "run", "./main.py", "--proxy-headers", "--port", "8000" ]
+CMD [ "fastapi", "run", "./main.py", "--proxy-header

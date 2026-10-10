@@ -3,40 +3,50 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile  # Path to your Dockerfile
+      dockerfile: Dockerfile
     container_name: api_service
+    restart: unless-stopped
     volumes:
-      - ./city.mmdb:/home/user/app/city.mmdb
-      - ./asn.mmdb:/home/user/app/asn.mmdb
+      # Read-only: the app only reads them; geolite-update replaces them on the host.
+      - ./city.mmdb:/home/user/app/city.mmdb:ro
+      - ./asn.mmdb:/home/user/app/asn.mmdb:ro
     networks:
       - backend
     environment:
       - PYTHONUNBUFFERED=1
-    depends_on:
-      - caddy  # Wait for Caddy to be ready before starting API
+    # Hardening: the app writes nothing to disk and needs no capabilities.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
   # Caddy service (Reverse Proxy)
   caddy:
     image: caddy:2
     container_name: caddy_service
+    restart: unless-stopped
     ports:
-      - "80:80"   # HTTP port
-      - "443:443" # HTTPS port
+      - "80:80"        # HTTP
+      - "443:443"      # HTTPS
+      - "443:443/udp"  # HTTP/3
     volumes:
-      - ./conf/Caddyfile:/etc/caddy/Caddyfile  # Mount your Caddyfile
+      - ./conf/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data  # Persistent storage for Caddy (SSL certs, etc.)
       - caddy_config:/config
     networks:
       - backend
-    environment:
-      - CADDY_DOCKER_GEN=true
+    depends_on:
+      - api  # Caddy proxies to the API, so start it first
 
 # Define networks for internal communication
 networks:
   backend:
     driver: bridge
     # Give the proxy a native IPv6 endpoint. Without this, Docker's userland
-    # proxy translates IPv6 connections to the container's IPv4 address and
+    # proxy translates IPv6 connections to the conta
     # Caddy sees the bridge gateway (for example, 172.18.0.1) as the client.
     enable_ipv6: true
 
