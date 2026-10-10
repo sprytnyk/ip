@@ -22,14 +22,14 @@ ENV PYTHONFAULTHANDLER=1
 
 WORKDIR "${APP}"
 
-# Copy only the necessary files for installation fir
+# Copy only the necessary files for installation first (use caching)
 COPY ./requirements.txt ./requirements.txt
 
 RUN python -m pip install --no-cache-dir --upgrade pip && \
-    python -m pip install --no-cache-dir -r requirem
+    python -m pip install --no-cache-dir -r requirements.txt
 
-# Copy only what the app needs: no .mmdb files, comp
-# Files stay owned by root, so the app user can read
+# Copy only what the app needs: no .mmdb files, compose files or VCS metadata.
+# Files stay owned by root, so the app user can read but not modify them.
 COPY main.py ./
 COPY templates ./templates
 COPY static ./static
@@ -41,4 +41,4 @@ USER user
 EXPOSE 8000
 
 # Default command
-CMD [ "fastapi", "run", "./main.py", "--proxy-header
+CMD [ "fastapi", "run", "./main.py", "--proxy-headers", "--port", "8000" ]
