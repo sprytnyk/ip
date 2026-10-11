@@ -25,8 +25,7 @@ WORKDIR "${APP}"
 # Copy only the necessary files for installation first (use caching)
 COPY ./requirements.txt ./requirements.txt
 
-RUN python -m pip install --no-cache-dir --upgrade pip && \
-    python -m pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
 # Copy only what the app needs: no .mmdb files, compose files or VCS metadata.
 # Files stay owned by root, so the app user can read but not modify them.

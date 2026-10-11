@@ -1,0 +1,3 @@
+ignored:
+  # Named USER is fine: the image creates the user and runs via docker-compose.
+  - DL3066
