@@ -1,0 +1,3 @@
+# Matches the Python version in the Dockerfile
+target-version = "py313"
+line-length = 88
