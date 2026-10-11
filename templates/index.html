@@ -156,6 +156,10 @@
             word-break: break-all;
         }
 
+        .row-value.muted {
+            color: #94a3b8;
+        }
+
         .footer {
             text-align: center;
             font-size: 0.875rem;
@@ -197,9 +201,10 @@
 
         <div class="card">
             <div class="info-list animate-fade-in">
-                <!-- IP Address -->
+                <!-- IPv4 and IPv6 Addresses -->
+                {% for version in (4, 6) %}
                 <div class="info-row">
-                    <div class="row-icon blue">
+                    <div class="row-icon {{ 'blue' if version == 4 else 'purple' }}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="4" x2="20" y1="9" y2="9"></line>
                             <line x1="4" x2="20" y1="15" y2="15"></line>
@@ -208,10 +213,15 @@
                         </svg>
                     </div>
                     <div class="row-content">
-                        <p class="row-label">IP Address</p>
+                        <p class="row-label">IPv{{ version }}</p>
+                        {% if data.version == version %}
                         <p class="row-value">{{ data.ip }}</p>
+                        {% else %}
+                        <p class="row-value muted" data-probe="{{ version }}">Not detected</p>
+                        {% endif %}
                     </div>
                 </div>
+                {% endfor %}
 
                 <!-- Country -->
                 <div class="info-row">
@@ -268,5 +278,29 @@
             <p>Your data isn't collected. Check this <a href="https://github.com/sprytnyk/ip" target="_blank" rel="noopener noreferrer">GitHub repository</a>.</p>
         </div>
     </div>
+
+    <script>
+        // A request reaches the server over one protocol only, so the address
+        // on the other protocol comes from a subdomain that has only an A
+        // record (ipv4.) or only an AAAA record (ipv6.).
+        const baseHost = location.host.replace(/^ipv[46]\./, "");
+
+        document.querySelectorAll("[data-probe]").forEach(async (el) => {
+            const version = Number(el.dataset.probe);
+            el.textContent = "Checking…";
+            try {
+                const response = await fetch(
+                    `${location.protocol}//ipv${version}.${baseHost}/api/address/`,
+                    { cache: "no-store", signal: AbortSignal.timeout(5000) },
+                );
+                const data = await response.json();
+                if (!response.ok || data.version !== version) throw new Error();
+                el.textContent = data.ip;
+                el.classList.remove("muted");
+            } catch {
+                el.textContent = "Not detected";
+            }
+        });
+    </script>
 </body>
 </html>

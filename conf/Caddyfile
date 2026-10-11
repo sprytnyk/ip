@@ -1,4 +1,6 @@
-ip.sprytnyk.dev {
+# ipv4. must have only an A record and ipv6. only an AAAA record: the page
+# fetches /api/address/ from them to find the client's other address.
+ip.sprytnyk.dev, ipv4.ip.sprytnyk.dev, ipv6.ip.sprytnyk.dev {
     # Security headers
     header {
         X-XSS-Protection "1; mode=block"

@@ -1,5 +1,7 @@
+import ipaddress
 import os
 from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -16,11 +18,15 @@ app = FastAPI(
     description=(
         "This API provides the geographical location of an IP address. "
         "It returns the country, city, and IP address information for both "
-        "the client's IP or a specific IP address."
+        "the client's IP or a specific IPv4 or IPv6 address."
     ),
     docs_url="/docs/",
     redoc_url="/redoc/",
 )
+
+# The home page fetches /api/address/ from the ipv4. and ipv6. subdomains,
+# which are separate origins. The API is public and uses no cookies.
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"])
 
 # Mount the static directory to serve static files (like favicon)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -35,7 +41,14 @@ class ClientLocationResponse(BaseModel):
     iso_code: str
     city: str
     ip: str
+    version: int
     org: str
+
+
+# Define the response model for the client's bare address
+class ClientAddressResponse(BaseModel):
+    ip: str
+    version: int
 
 
 # Define the error message model
@@ -63,6 +76,29 @@ def get_client_ip(request: Request) -> str:
         return request.client.host
 
 
+# Function to validate and normalise an IP address
+def parse_ip(ip: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
+    """
+    Parses an IPv4 or IPv6 address.
+    IPv4-mapped IPv6 addresses (::ffff:1.2.3.4), which dual-stack sockets
+    report for IPv4 clients, are unwrapped to plain IPv4.
+
+    Raises:
+        HTTPException: If the string is not a valid IP address.
+    """
+    try:
+        address = ipaddress.ip_address(ip)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{ip} is not a valid IP address.",
+        )
+
+    if address.version == 6 and address.ipv4_mapped:
+        return address.ipv4_mapped
+    return address
+
+
 # Function to perform the IP lookup and return location details
 def lookup_ip(ip: str) -> ClientLocationResponse:
     """
@@ -76,8 +112,11 @@ def lookup_ip(ip: str) -> ClientLocationResponse:
         ClientLocationResponse: Contains country, city, organisation, and IP.
 
     Raises:
-        HTTPException: If the IP is not found or an internal error occurs.
+        HTTPException: If the IP is invalid, not found or an internal error occurs.
     """
+    address = parse_ip(ip)
+    ip = str(address)
+
     # Ensure that the GeoIP ASN database exists
     if not os.path.exists(GEOIP_ASN_DB_PATH) or not os.path.exists(GEOIP_CITY_DB_PATH):
         raise HTTPException(
@@ -100,6 +139,7 @@ def lookup_ip(ip: str) -> ClientLocationResponse:
             iso_code=metadata.country.iso_code or "Unknown",
             city=metadata.city.name or "Unknown",
             ip=ip,
+            version=address.version,
             org=asn.autonomous_system_organization or "Unknown",
         )
 
@@ -156,11 +196,38 @@ async def display_client_location(request: Request):
         )
 
 
+# Route to get only the requester's IP address and its version
+@app.get(
+    "/api/address/",
+    response_model=ClientAddressResponse,
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Address retrieved successfully",
+            "content": {
+                "application/json": {"example": {"ip": "2001:db8::1", "version": 6}}
+            },
+        },
+    },
+)
+async def get_requester_address(request: Request) -> ClientAddressResponse:
+    """
+    Returns the requester's IP address and whether it is IPv4 or IPv6,
+    without a GeoIP lookup. The home page calls it on the ipv4. and ipv6.
+    subdomains to find the client's address on the other protocol.
+    """
+    address = parse_ip(get_client_ip(request))
+    return ClientAddressResponse(ip=str(address), version=address.version)
+
+
 # Route to get location details for the requester's IP address
 @app.get(
     "/api/ip/",
     response_model=ClientLocationResponse,
     responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "model": Message,
+            "description": "The given string is not a valid IP address",
+        },
         status.HTTP_404_NOT_FOUND: {
             "model": Message,
             "description": "IP address not found in the GeoIP database",
@@ -178,6 +245,7 @@ async def display_client_location(request: Request):
                         "iso_code": "UA",
                         "city": "Kropyvnytskyi",
                         "ip": "192.168.1.1",
+                        "version": 4,
                         "org": "Example ASN Organisation",
                     }
                 }
@@ -201,6 +269,10 @@ async def get_requester_ip(request: Request) -> ClientLocationResponse:
     "/api/ip/{ip}/",
     response_model=ClientLocationResponse,
     responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "model": Message,
+            "description": "The given string is not a valid IP address",
+        },
         status.HTTP_404_NOT_FOUND: {
             "model": Message,
             "description": "IP address not found in the GeoIP database",
@@ -218,6 +290,7 @@ async def get_requester_ip(request: Request) -> ClientLocationResponse:
                         "iso_code": "UA",
                         "city": "Kropyvnytskyi",
                         "ip": "192.168.1.1",
+                        "version": 4,
                         "org": "Example ASN Organisation",
                     }
                 }
