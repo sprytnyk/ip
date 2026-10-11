@@ -1,5 +1,6 @@
 import ipaddress
 import os
+
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -150,7 +151,7 @@ def lookup_ip(ip: str) -> ClientLocationResponse:
             detail=f"IP address {ip} not found in GeoIP database.",
         )
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - any other failure becomes a 500
         # Catch any unexpected errors and log them
         print(f"Error looking up IP {ip}: {e}")
         raise HTTPException(
