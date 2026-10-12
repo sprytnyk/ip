@@ -36,6 +36,9 @@ services:
       - ./conf/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data  # Persistent storage for Caddy (SSL certs, etc.)
       - caddy_config:/config
+    environment:
+      # Substituted into the Caddyfile site addresses; must be set in .env.
+      - DOMAIN=${DOMAIN:?DOMAIN must be set in .env}
     networks:
       - backend
     depends_on:

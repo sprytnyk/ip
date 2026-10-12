@@ -349,6 +349,9 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Local configuration
+.env
+
 # Maxmind
 city.mmdb
 asn.mmdb
