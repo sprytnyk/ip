@@ -17,9 +17,9 @@ Your data isn't collected:
 - Caddy has no `log` directive, so it doesn't write access logs either.
 - The home page uses no cookies, analytics or external scripts.
 
-The interactive API docs at `/docs/` and `/redoc/` are FastAPI's defaults,
-which load Swagger UI and ReDoc from `cdn.jsdelivr.net` (and ReDoc also loads
-Google Fonts), so opening those pages contacts those services.
+The interactive API docs at `/docs/` are FastAPI's default, which loads
+Swagger UI from `cdn.jsdelivr.net` and its icon from `fastapi.tiangolo.com`,
+so opening that page contacts those services.
 
 ## API
 

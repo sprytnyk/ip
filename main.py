@@ -22,7 +22,7 @@ app = FastAPI(
         "the client's IP or a specific IPv4 or IPv6 address."
     ),
     docs_url="/docs/",
-    redoc_url="/redoc/",
+    redoc_url=None,
 )
 
 # The home page fetches /api/address/ from the ipv4. and ipv6. subdomains,
