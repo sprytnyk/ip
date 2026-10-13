@@ -36,8 +36,7 @@ $ curl https://example.com/api/ip/192.0.2.10/
 ```
 
 Errors return `{"detail": "..."}` with status 400 (not an IP address), 404 (not
-in the database) or 500 (database missing or lookup failure). The OpenAPI docs
-are at `/docs/` and `/redoc/`.
+in the database) or 500 (database missing or lookup failure).
 
 ## How both addresses are detected
 
