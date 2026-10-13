@@ -152,8 +152,8 @@ def lookup_ip(ip: str) -> ClientLocationResponse:
         )
 
     except Exception as e:  # noqa: BLE001 - any other failure becomes a 500
-        # Catch any unexpected errors and log them
-        print(f"Error looking up IP {ip}: {e}")
+        # Catch any unexpected errors and log them, without the IP address
+        print(f"Error looking up IP: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while processing the request.",

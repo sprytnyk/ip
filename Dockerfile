@@ -39,5 +39,6 @@ USER user
 # Expose the default application port
 EXPOSE 8000
 
-# Default command
-CMD [ "fastapi", "run", "./main.py", "--proxy-headers", "--port", "8000" ]
+# Default command. Run uvicorn directly: `fastapi run` has no option to turn
+# off the access log, which would write every visitor's IP to the container output.
+CMD [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--no-access-log" ]
