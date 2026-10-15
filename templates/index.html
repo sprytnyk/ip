@@ -160,6 +160,25 @@
             color: #94a3b8;
         }
 
+        .row-detail {
+            font-size: 0.875rem;
+            color: #cbd5e1;
+            margin-top: 0.25rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-note {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+        }
+
         .footer {
             text-align: center;
             font-size: 0.875rem;
@@ -272,6 +291,41 @@
             </div>
         </div>
 
+        {% if dns_zone %}
+        <div class="card">
+            <h2 class="card-title">DNS resolvers</h2>
+            <p class="card-note">
+                The servers that look up domain names for you. If you use a VPN
+                and one of these belongs to your ISP rather than the VPN
+                provider, your DNS queries are leaking.
+            </p>
+            <div class="info-list animate-fade-in" id="dns-leak" data-zone="{{ dns_zone }}">
+                <div class="info-row">
+                    <div class="row-content">
+                        <p class="row-value muted">Checking…</p>
+                    </div>
+                </div>
+            </div>
+            <template id="dns-resolver">
+                <div class="info-row">
+                    <div class="row-icon blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
+                            <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
+                            <line x1="6" x2="6.01" y1="6" y2="6"></line>
+                            <line x1="6" x2="6.01" y1="18" y2="18"></line>
+                        </svg>
+                    </div>
+                    <div class="row-content">
+                        <p class="row-label"></p>
+                        <p class="row-value"></p>
+                        <p class="row-detail"></p>
+                    </div>
+                </div>
+            </template>
+        </div>
+        {% endif %}
+
         <div class="footer">
             <p>Data provided by <a href="https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/" target="_blank" rel="noopener noreferrer">MaxMind GeoIP2 Lite</a>.</p>
             <p>View the <a href="/docs" target="_blank" rel="noopener noreferrer">API Documentation</a>.</p>
@@ -301,6 +355,58 @@
                 el.textContent = "Not detected";
             }
         });
+
+        // DNS leak test: look up random names under dns.<domain>, whose
+        // nameserver records which resolvers asked, then fetch that list.
+        // The lookups fail with NXDOMAIN by design; only the query matters.
+        const dnsLeak = document.getElementById("dns-leak");
+        if (dnsLeak) {
+            const showMessage = (text) => {
+                const row = document.createElement("div");
+                row.className = "info-row";
+                row.innerHTML = '<div class="row-content"><p class="row-value muted"></p></div>';
+                row.querySelector("p").textContent = text;
+                dnsLeak.replaceChildren(row);
+            };
+
+            (async () => {
+                const testId = Array.from(
+                    crypto.getRandomValues(new Uint8Array(16)),
+                    (byte) => byte.toString(16).padStart(2, "0"),
+                ).join("");
+                // Several lookups, so resolvers that share the load all show up
+                await Promise.allSettled(
+                    Array.from({ length: 6 }, (_, n) =>
+                        fetch(`https://${testId}-${n}.${dnsLeak.dataset.zone}/`, {
+                            mode: "no-cors",
+                            cache: "no-store",
+                            signal: AbortSignal.timeout(5000),
+                        }),
+                    ),
+                );
+
+                try {
+                    const response = await fetch(`/api/dns/${testId}/`, { cache: "no-store" });
+                    if (!response.ok) throw new Error();
+                    const { resolvers } = await response.json();
+                    if (resolvers.length === 0) {
+                        showMessage("No resolvers detected");
+                        return;
+                    }
+                    const template = document.getElementById("dns-resolver");
+                    dnsLeak.replaceChildren(...resolvers.map((resolver) => {
+                        const row = template.content.cloneNode(true);
+                        const [label, value, detail] = row.querySelectorAll("p");
+                        label.textContent = `IPv${resolver.version}`;
+                        value.textContent = resolver.ip;
+                        detail.textContent = `${resolver.city}, ${resolver.country} (${resolver.iso_code}) · ${resolver.org}`;
+                        return row;
+                    }));
+                } catch {
+                    showMessage("Test failed");
+                }
+            })();
+        }
     </script>
 </body>
 </html>

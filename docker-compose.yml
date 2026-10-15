@@ -12,8 +12,15 @@ services:
       - ./asn.mmdb:/home/user/app/asn.mmdb:ro
     networks:
       - backend
+    ports:
+      # Nameserver for dns.<DOMAIN>, used by the DNS leak test. The app listens
+      # on an unprivileged port, so it needs no capabilities.
+      - "53:5300/udp"
+      - "53:5300/tcp"
     environment:
       - PYTHONUNBUFFERED=1
+      # The DNS leak test answers for dns.<DOMAIN> with ns.<DOMAIN> as its nameserver.
+      - DOMAIN=${DOMAIN:?DOMAIN must be set in .env}
     # Hardening: the app writes nothing to disk and needs no capabilities.
     read_only: true
     tmpfs:

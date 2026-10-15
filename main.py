@@ -1,7 +1,9 @@
 import ipaddress
 import os
+from contextlib import asynccontextmanager
+from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Path, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -10,9 +12,34 @@ from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError
 from pydantic import BaseModel
 
+import dnsleak
+
 # Paths to GeoIP databases
 GEOIP_CITY_DB_PATH = "./city.mmdb"
 GEOIP_ASN_DB_PATH = "./asn.mmdb"
+
+# The DNS leak test serves dns.<DOMAIN>; without DOMAIN it's turned off.
+DOMAIN = os.environ.get("DOMAIN", "").strip().rstrip(".")
+DNS_ZONE = f"dns.{DOMAIN}" if DOMAIN else None
+DNS_PORT = int(os.environ.get("DNS_PORT", "5300"))
+
+# Resolvers seen by the DNS server, kept in this process's memory. That's
+# why uvicorn must run a single worker: the API reads what the DNS server saw.
+resolver_store = dnsleak.ResolverStore()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Runs the DNS server for the leak test alongside the API, if it's enabled.
+    """
+    if DOMAIN:
+        zone = dnsleak.LeakTestZone(DOMAIN, resolver_store)
+        async with dnsleak.serve(zone, DNS_PORT):
+            yield
+    else:
+        yield
+
 
 app = FastAPI(
     title="IP Location API",
@@ -23,6 +50,7 @@ app = FastAPI(
     ),
     docs_url="/docs/",
     redoc_url=None,
+    lifespan=lifespan,
 )
 
 # The home page fetches /api/address/ from the ipv4. and ipv6. subdomains,
@@ -50,6 +78,11 @@ class ClientLocationResponse(BaseModel):
 class ClientAddressResponse(BaseModel):
     ip: str
     version: int
+
+
+# Define the response model for the DNS leak test
+class DnsLeakResponse(BaseModel):
+    resolvers: list[ClientLocationResponse]
 
 
 # Define the error message model
@@ -186,7 +219,8 @@ async def display_client_location(request: Request):
         location_data = lookup_ip(client_ip)
         # Render the HTML template with the location data
         return templates.TemplateResponse(
-            "index.html", {"request": request, "data": location_data.dict()}
+            "index.html",
+            {"request": request, "data": location_data.dict(), "dns_zone": DNS_ZONE},
         )
     except HTTPException as e:
         # If an error occurs, render the error template with the error details
@@ -306,3 +340,73 @@ async def get_ip_location(ip: str) -> ClientLocationResponse:
     If an internal error occurs, a 500 error is raised.
     """
     return lookup_ip(ip)
+
+
+# Route to get the resolvers seen during a DNS leak test
+@app.get(
+    "/api/dns/{test_id}/",
+    response_model=DnsLeakResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "model": Message,
+            "description": "The DNS leak test isn't enabled on this server",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": Message,
+            "description": "An internal server error occurred while processing the request",
+        },
+        status.HTTP_200_OK: {
+            "description": "Resolvers retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "resolvers": [
+                            {
+                                "country": "Ukraine",
+                                "iso_code": "UA",
+                                "city": "Kropyvnytskyi",
+                                "ip": "192.0.2.53",
+                                "version": 4,
+                                "org": "Example ASN Organisation",
+                            }
+                        ]
+                    }
+                }
+            },
+        },
+    },
+)
+async def get_dns_resolvers(
+    test_id: Annotated[str, Path(pattern=dnsleak.TEST_ID_PATTERN)],
+) -> DnsLeakResponse:
+    """
+    Returns the DNS resolvers that looked up <test_id>-<n>.dns.<domain> in the
+    last minute, with their location details. The home page runs the lookups
+    and then calls this; resolvers that don't belong to your VPN or chosen DNS
+    provider mean your DNS queries are leaking.
+    """
+    if not DNS_ZONE:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The DNS leak test isn't enabled on this server.",
+        )
+
+    resolvers = []
+    for ip in resolver_store.get(test_id):
+        try:
+            resolvers.append(lookup_ip(ip))
+        except HTTPException as e:
+            # Not in the GeoIP database: still list the resolver itself
+            if e.status_code != status.HTTP_404_NOT_FOUND:
+                raise
+            resolvers.append(
+                ClientLocationResponse(
+                    country="Unknown",
+                    iso_code="Unknown",
+                    city="Unknown",
+                    ip=ip,
+                    version=ipaddress.ip_address(ip).version,
+                    org="Unknown",
+                )
+            )
+    return DnsLeakResponse(resolvers=resolvers)

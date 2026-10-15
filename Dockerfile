@@ -29,16 +29,17 @@ RUN python -m pip install --no-cache-dir -r requirements.txt
 
 # Copy only what the app needs: no .mmdb files, compose files or VCS metadata.
 # Files stay owned by root, so the app user can read but not modify them.
-COPY main.py ./
+COPY main.py dnsleak.py ./
 COPY templates ./templates
 COPY static ./static
 
 # Switch to the non-root user
 USER user
 
-# Expose the default application port
-EXPOSE 8000
+# Expose the application port and the DNS leak test's nameserver
+EXPOSE 8000 5300/udp 5300/tcp
 
 # Default command. Run uvicorn directly: `fastapi run` has no option to turn
 # off the access log, which would write every visitor's IP to the container output.
+# Keep a single worker: the DNS leak test keeps its results in process memory.
 CMD [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--no-access-log" ]
