@@ -80,9 +80,15 @@ class ClientAddressResponse(BaseModel):
     version: int
 
 
+# Define the response model for a resolver seen by the DNS leak test
+class DnsResolverResponse(ClientLocationResponse):
+    same_network: bool | None
+
+
 # Define the response model for the DNS leak test
 class DnsLeakResponse(BaseModel):
-    resolvers: list[ClientLocationResponse]
+    leak: bool | None
+    resolvers: list[DnsResolverResponse]
 
 
 # Define the error message model
@@ -191,6 +197,40 @@ def lookup_ip(ip: str) -> ClientLocationResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while processing the request.",
         )
+
+
+# Function to look up an address that may be missing from the GeoIP database
+def lookup_ip_or_none(ip: str) -> ClientLocationResponse | None:
+    """
+    Like lookup_ip, but returns None for invalid addresses and addresses that
+    aren't in the GeoIP database instead of raising.
+    """
+    try:
+        return lookup_ip(ip)
+    except HTTPException as e:
+        if e.status_code not in (
+            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_404_NOT_FOUND,
+        ):
+            raise
+        return None
+
+
+# Function to tell whether a DNS resolver is on the client's network
+def same_network(
+    resolver: ClientLocationResponse, client: ClientLocationResponse | None
+) -> bool | None:
+    """
+    Compares the ASN organisations of a resolver and the client. Returns None
+    if either is unknown, since then there's nothing to compare.
+    """
+    if client is None:
+        return None
+    if resolver.ip == client.ip:
+        return True
+    if "Unknown" in (resolver.org, client.org):
+        return None
+    return resolver.org == client.org
 
 
 # Route to serve the favicon.ico
@@ -360,6 +400,7 @@ async def get_ip_location(ip: str) -> ClientLocationResponse:
             "content": {
                 "application/json": {
                     "example": {
+                        "leak": False,
                         "resolvers": [
                             {
                                 "country": "Ukraine",
@@ -368,8 +409,9 @@ async def get_ip_location(ip: str) -> ClientLocationResponse:
                                 "ip": "192.0.2.53",
                                 "version": 4,
                                 "org": "Example ASN Organisation",
+                                "same_network": True,
                             }
-                        ]
+                        ],
                     }
                 }
             },
@@ -377,13 +419,19 @@ async def get_ip_location(ip: str) -> ClientLocationResponse:
     },
 )
 async def get_dns_resolvers(
+    request: Request,
     test_id: Annotated[str, Path(pattern=dnsleak.TEST_ID_PATTERN)],
 ) -> DnsLeakResponse:
     """
     Returns the DNS resolvers that looked up <test_id>-<n>.dns.<domain> in the
     last minute, with their location details. The home page runs the lookups
-    and then calls this; resolvers that don't belong to your VPN or chosen DNS
-    provider mean your DNS queries are leaking.
+    and then calls this.
+
+    Each resolver's `same_network` says whether it belongs to the same network
+    (ASN organisation) as the requester's IP address, and `leak` is true if any
+    resolver doesn't. Behind a VPN, that means DNS queries bypass the tunnel,
+    unless the resolver is a DNS provider you chose. Either is null when it
+    can't be told, e.g. when an address isn't in the GeoIP database.
     """
     if not DNS_ZONE:
         raise HTTPException(
@@ -391,22 +439,28 @@ async def get_dns_resolvers(
             detail="The DNS leak test isn't enabled on this server.",
         )
 
+    client = lookup_ip_or_none(get_client_ip(request))
     resolvers = []
     for ip in resolver_store.get(test_id):
-        try:
-            resolvers.append(lookup_ip(ip))
-        except HTTPException as e:
-            # Not in the GeoIP database: still list the resolver itself
-            if e.status_code != status.HTTP_404_NOT_FOUND:
-                raise
-            resolvers.append(
-                ClientLocationResponse(
-                    country="Unknown",
-                    iso_code="Unknown",
-                    city="Unknown",
-                    ip=ip,
-                    version=ipaddress.ip_address(ip).version,
-                    org="Unknown",
-                )
+        location = lookup_ip_or_none(ip) or ClientLocationResponse(
+            country="Unknown",
+            iso_code="Unknown",
+            city="Unknown",
+            ip=ip,
+            version=ipaddress.ip_address(ip).version,
+            org="Unknown",
+        )
+        resolvers.append(
+            DnsResolverResponse(
+                **location.model_dump(), same_network=same_network(location, client)
             )
-    return DnsLeakResponse(resolvers=resolvers)
+        )
+
+    verdicts = {resolver.same_network for resolver in resolvers}
+    if False in verdicts:
+        leak = True
+    elif verdicts == {True}:
+        leak = False
+    else:
+        leak = None
+    return DnsLeakResponse(leak=leak, resolvers=resolvers)

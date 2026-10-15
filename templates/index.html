@@ -179,6 +179,69 @@
             margin-bottom: 1.5rem;
         }
 
+        .verdict {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid;
+            margin-bottom: 1rem;
+        }
+
+        .verdict[hidden] {
+            display: none;
+        }
+
+        .verdict-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .verdict-text {
+            font-size: 0.875rem;
+            color: #cbd5e1;
+        }
+
+        .verdict.ok {
+            background-color: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+        .verdict.ok .verdict-title { color: #34d399; }
+
+        .verdict.leak {
+            background-color: rgba(244, 63, 94, 0.1);
+            border-color: rgba(244, 63, 94, 0.4);
+        }
+        .verdict.leak .verdict-title { color: #fb7185; }
+
+        .verdict.unknown {
+            background-color: rgba(148, 163, 184, 0.1);
+            border-color: rgba(148, 163, 184, 0.4);
+        }
+        .verdict.unknown .verdict-title { color: #cbd5e1; }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .badge:empty {
+            display: none;
+        }
+
+        .badge.ok {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .badge.leak {
+            background-color: rgba(244, 63, 94, 0.2);
+            color: #fb7185;
+        }
+
         .footer {
             text-align: center;
             font-size: 0.875rem;
@@ -295,10 +358,13 @@
         <div class="card">
             <h2 class="card-title">DNS resolvers</h2>
             <p class="card-note">
-                The servers that look up domain names for you. If you use a VPN
-                and one of these belongs to your ISP rather than the VPN
-                provider, your DNS queries are leaking.
+                The servers that look up domain names for you, compared with the
+                network your IP address belongs to.
             </p>
+            <div class="verdict" id="dns-verdict" hidden>
+                <p class="verdict-title"></p>
+                <p class="verdict-text"></p>
+            </div>
             <div class="info-list animate-fade-in" id="dns-leak" data-zone="{{ dns_zone }}">
                 <div class="info-row">
                     <div class="row-content">
@@ -317,7 +383,7 @@
                         </svg>
                     </div>
                     <div class="row-content">
-                        <p class="row-label"></p>
+                        <p class="row-label"><span></span><span class="badge"></span></p>
                         <p class="row-value"></p>
                         <p class="row-detail"></p>
                     </div>
@@ -361,6 +427,14 @@
         // The lookups fail with NXDOMAIN by design; only the query matters.
         const dnsLeak = document.getElementById("dns-leak");
         if (dnsLeak) {
+            const verdict = document.getElementById("dns-verdict");
+            const showVerdict = (kind, title, text) => {
+                verdict.className = `verdict ${kind}`;
+                verdict.querySelector(".verdict-title").textContent = title;
+                verdict.querySelector(".verdict-text").textContent = text;
+                verdict.hidden = false;
+            };
+
             const showMessage = (text) => {
                 const row = document.createElement("div");
                 row.className = "info-row";
@@ -388,16 +462,48 @@
                 try {
                     const response = await fetch(`/api/dns/${testId}/`, { cache: "no-store" });
                     if (!response.ok) throw new Error();
-                    const { resolvers } = await response.json();
+                    const { leak, resolvers } = await response.json();
                     if (resolvers.length === 0) {
                         showMessage("No resolvers detected");
                         return;
                     }
+                    const outside = resolvers.filter((resolver) => resolver.same_network === false);
+                    if (leak === true) {
+                        const orgs = [...new Set(outside.map((resolver) => resolver.org))].join(", ");
+                        showVerdict(
+                            "leak",
+                            "Possible DNS leak",
+                            `Resolvers on a different network than your IP address: ${outside.length} of ${resolvers.length} (${orgs}). ` +
+                            "If you use a VPN and these aren't your VPN's or a DNS provider you chose, " +
+                            "your DNS queries bypass the VPN, and whoever runs them can see the sites you visit.",
+                        );
+                    } else if (leak === false) {
+                        showVerdict(
+                            "ok",
+                            "No DNS leak detected",
+                            "All resolvers belong to the same network as your IP address, so your DNS queries take the same route as the rest of your traffic.",
+                        );
+                    } else {
+                        showVerdict(
+                            "unknown",
+                            "Can't tell whether DNS leaks",
+                            "Some addresses aren't in the GeoIP database, so their networks can't be compared.",
+                        );
+                    }
+
                     const template = document.getElementById("dns-resolver");
                     dnsLeak.replaceChildren(...resolvers.map((resolver) => {
                         const row = template.content.cloneNode(true);
                         const [label, value, detail] = row.querySelectorAll("p");
-                        label.textContent = `IPv${resolver.version}`;
+                        const [version, badge] = label.querySelectorAll("span");
+                        version.textContent = `IPv${resolver.version}`;
+                        if (resolver.same_network === true) {
+                            badge.textContent = "Your network";
+                            badge.classList.add("ok");
+                        } else if (resolver.same_network === false) {
+                            badge.textContent = "Other network";
+                            badge.classList.add("leak");
+                        }
                         value.textContent = resolver.ip;
                         detail.textContent = `${resolver.city}, ${resolver.country} (${resolver.iso_code}) · ${resolver.org}`;
                         return row;

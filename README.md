@@ -33,7 +33,7 @@ so opening that page contacts those services.
 | `GET /api/address/`  | Your IP address and its version, without a GeoIP lookup         |
 | `GET /api/ip/`       | Location details for your IP address                            |
 | `GET /api/ip/{ip}/`  | Location details for any IPv4 or IPv6 address                   |
-| `GET /api/dns/{id}/` | DNS resolvers seen for a leak test id, with location details    |
+| `GET /api/dns/{id}/` | DNS resolvers seen for a leak test id, and whether DNS leaks    |
 
 ```console
 $ curl https://example.com/api/ip/192.0.2.10/
@@ -62,6 +62,15 @@ resolvers do those lookups for the browser have to ask this server, which
 records their addresses under the id and answers NXDOMAIN, so the lookups fail
 and no HTTP request is made. The page then fetches `/api/dns/<id>/` to list the
 resolvers.
+
+To tell whether DNS leaks, the API compares each resolver's network (its ASN
+organisation) with the network of the IP address that fetches the result. Each
+resolver gets `same_network`, and `leak` is `true` if any resolver is on
+another network. Behind a VPN, that usually means DNS queries bypass the
+tunnel. It can also be a DNS provider you chose on purpose, such as a public
+resolver or your VPN's own DNS run from a different network, so the page calls
+it a possible leak. Both fields are `null` when a network can't be compared,
+e.g. when an address isn't in the GeoIP database.
 
 Run the lookups yourself to test resolvers outside the browser:
 
