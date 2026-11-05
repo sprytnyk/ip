@@ -5,6 +5,8 @@ with the country, city and network (ASN) they belong to, plus a DNS leak
 test that shows which DNS resolvers look up names for you. Built with FastAPI,
 served behind Caddy, and looked up locally in the MaxMind GeoLite2 databases.
 
+![The home page with example addresses](docs/screenshot.png)
+
 ## Privacy
 
 Your data isn't collected:
