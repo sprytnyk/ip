@@ -259,14 +259,16 @@ async def display_client_location(request: Request):
         location_data = lookup_ip(client_ip)
         # Render the HTML template with the location data
         return templates.TemplateResponse(
+            request,
             "index.html",
-            {"request": request, "data": location_data.dict(), "dns_zone": DNS_ZONE},
+            {"data": location_data.model_dump(), "dns_zone": DNS_ZONE},
         )
     except HTTPException as e:
         # If an error occurs, render the error template with the error details
         return templates.TemplateResponse(
+            request,
             "error.html",
-            {"request": request, "detail": e.detail, "status_code": e.status_code},
+            {"detail": e.detail, "status_code": e.status_code},
             status_code=e.status_code,
         )
 
