@@ -116,14 +116,14 @@ Caddy gets TLS certificates for all three hostnames automatically.
 ```console
 uv venv
 uv pip install -r requirements.txt
-.venv/bin/fastapi dev main.py
+.venv/bin/uvicorn main:app --reload
 ```
 
 The DNS leak test is off unless `DOMAIN` is set. To try its DNS server
 locally, which listens on port 5300 (`DNS_PORT`):
 
 ```console
-DOMAIN=example.test .venv/bin/fastapi dev main.py
+DOMAIN=example.test .venv/bin/uvicorn main:app --reload
 dig @::1 -p 5300 "$(openssl rand -hex 16)-0.dns.example.test"
 ```
 
