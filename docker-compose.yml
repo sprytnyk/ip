@@ -32,7 +32,7 @@ services:
 
   # Caddy service (Reverse Proxy)
   caddy:
-    image: caddy:2
+    image: caddy:2.11.8
     container_name: caddy_service
     restart: unless-stopped
     ports:
