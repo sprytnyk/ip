@@ -1,7 +1,7 @@
 import ipaddress
 import os
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import FastAPI, HTTPException, Path, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +14,6 @@ from pydantic import BaseModel
 
 import dnsleak
 
-# Paths to GeoIP databases
 GEOIP_CITY_DB_PATH = "./city.mmdb"
 GEOIP_ASN_DB_PATH = "./asn.mmdb"
 
@@ -57,14 +56,11 @@ app = FastAPI(
 # which are separate origins. The API is public and uses no cookies.
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"])
 
-# Mount the static directory to serve static files (like favicon)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Setup Jinja2 template directory
 templates = Jinja2Templates(directory="templates")
 
 
-# Define the response model for the client's location
 class ClientLocationResponse(BaseModel):
     country: str
     iso_code: str
@@ -74,29 +70,56 @@ class ClientLocationResponse(BaseModel):
     org: str
 
 
-# Define the response model for the client's bare address
 class ClientAddressResponse(BaseModel):
     ip: str
     version: int
 
 
-# Define the response model for a resolver seen by the DNS leak test
 class DnsResolverResponse(ClientLocationResponse):
     same_network: bool | None
 
 
-# Define the response model for the DNS leak test
 class DnsLeakResponse(BaseModel):
     leak: bool | None
     resolvers: list[DnsResolverResponse]
 
 
-# Define the error message model
 class Message(BaseModel):
     detail: str
 
 
-# Function to retrieve the client's IP address from the request headers
+# Response examples and error descriptions for the API docs
+LOCATION_EXAMPLE = {
+    "country": "Ukraine",
+    "iso_code": "UA",
+    "city": "Kropyvnytskyi",
+    "ip": "192.168.1.1",
+    "version": 4,
+    "org": "Example ASN Organisation",
+}
+
+SERVER_ERROR_RESPONSE = {
+    "model": Message,
+    "description": "An internal server error occurred while processing the request",
+}
+
+LOCATION_RESPONSES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_400_BAD_REQUEST: {
+        "model": Message,
+        "description": "The given string is not a valid IP address",
+    },
+    status.HTTP_404_NOT_FOUND: {
+        "model": Message,
+        "description": "IP address not found in the GeoIP database",
+    },
+    status.HTTP_500_INTERNAL_SERVER_ERROR: SERVER_ERROR_RESPONSE,
+    status.HTTP_200_OK: {
+        "description": "Location details retrieved successfully",
+        "content": {"application/json": {"example": LOCATION_EXAMPLE}},
+    },
+}
+
+
 def get_client_ip(request: Request) -> str:
     """
     Extracts the client's IP address from headers or request object.
@@ -104,19 +127,15 @@ def get_client_ip(request: Request) -> str:
     Falls back to the proxy IP if those headers are not found.
     """
     x_forwarded_for = request.headers.get("X-Forwarded-For")
-    x_real_ip = request.headers.get("X-Real-IP")
-
     if x_forwarded_for:
-        # Return the first IP in the list (client's real IP)
+        # The first address in the list is the client's
         return x_forwarded_for.split(",")[0].strip()
-    elif x_real_ip:
+    x_real_ip = request.headers.get("X-Real-IP")
+    if x_real_ip:
         return x_real_ip
-    else:
-        # Fallback to request.client.host (proxy IP)
-        return request.client.host
+    return request.client.host
 
 
-# Function to validate and normalise an IP address
 def parse_ip(ip: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
     """
     Parses an IPv4 or IPv6 address.
@@ -132,14 +151,13 @@ def parse_ip(ip: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"{ip} is not a valid IP address.",
-        )
+        ) from None
 
     if address.version == 6 and address.ipv4_mapped:
         return address.ipv4_mapped
     return address
 
 
-# Function to perform the IP lookup and return location details
 def lookup_ip(ip: str) -> ClientLocationResponse:
     """
     Looks up geographic and ASN data for the provided IP address.
@@ -157,7 +175,6 @@ def lookup_ip(ip: str) -> ClientLocationResponse:
     address = parse_ip(ip)
     ip = str(address)
 
-    # Ensure that the GeoIP ASN database exists
     if not os.path.exists(GEOIP_ASN_DB_PATH) or not os.path.exists(GEOIP_CITY_DB_PATH):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -165,41 +182,33 @@ def lookup_ip(ip: str) -> ClientLocationResponse:
         )
 
     try:
-        # Open the ASN database and retrieve ASN data
         with Reader(GEOIP_ASN_DB_PATH) as asn_db:
             asn = asn_db.asn(ip)
-
-        # Open the City database and retrieve location data
         with Reader(GEOIP_CITY_DB_PATH) as city_db:
-            metadata = city_db.city(ip)
-
-        # Return the combined location and ASN data
-        return ClientLocationResponse(
-            country=metadata.country.name or "Unknown",
-            iso_code=metadata.country.iso_code or "Unknown",
-            city=metadata.city.name or "Unknown",
-            ip=ip,
-            version=address.version,
-            org=asn.autonomous_system_organization or "Unknown",
-        )
-
+            location = city_db.city(ip)
     except AddressNotFoundError:
-        # Raise a 404 if the IP is not found in the database
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"IP address {ip} not found in GeoIP database.",
-        )
-
-    except Exception as e:  # noqa: BLE001 - any other failure becomes a 500
-        # Catch any unexpected errors and log them, without the IP address
+        ) from None
+    except Exception as e:
+        # Any other failure becomes a 500, logged without the IP address
         print(f"Error looking up IP: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while processing the request.",
-        )
+        ) from e
+
+    return ClientLocationResponse(
+        country=location.country.name or "Unknown",
+        iso_code=location.country.iso_code or "Unknown",
+        city=location.city.name or "Unknown",
+        ip=ip,
+        version=address.version,
+        org=asn.autonomous_system_organization or "Unknown",
+    )
 
 
-# Function to look up an address that may be missing from the GeoIP database
 def lookup_ip_or_none(ip: str) -> ClientLocationResponse | None:
     """
     Like lookup_ip, but returns None for invalid addresses and addresses that
@@ -216,7 +225,6 @@ def lookup_ip_or_none(ip: str) -> ClientLocationResponse | None:
         return None
 
 
-# Function to tell whether a DNS resolver is on the client's network
 def same_network(
     resolver: ClientLocationResponse, client: ClientLocationResponse | None
 ) -> bool | None:
@@ -233,7 +241,6 @@ def same_network(
     return resolver.org == client.org
 
 
-# Route to serve the favicon.ico
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     """
@@ -244,36 +251,28 @@ async def favicon():
     )
 
 
-# Route to render an HTML page with location details for the client
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def display_client_location(request: Request):
     """
     Renders an HTML page displaying the client's geographical location.
-    If the GeoIP database is not found, returns a status 500 error.
-    If the IP lookup fails, a 404 error is returned.
+    If the lookup fails, renders an error page with the lookup's status code.
     """
     try:
-        # Get the client's IP address (hardcoded example for testing)
-        client_ip = get_client_ip(request)
-        # Perform the lookup using the provided IP address
-        location_data = lookup_ip(client_ip)
-        # Render the HTML template with the location data
-        return templates.TemplateResponse(
-            request,
-            "index.html",
-            {"data": location_data.model_dump(), "dns_zone": DNS_ZONE},
-        )
+        location = lookup_ip(get_client_ip(request))
     except HTTPException as e:
-        # If an error occurs, render the error template with the error details
         return templates.TemplateResponse(
             request,
             "error.html",
             {"detail": e.detail, "status_code": e.status_code},
             status_code=e.status_code,
         )
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {"data": location.model_dump(), "dns_zone": DNS_ZONE},
+    )
 
 
-# Route to get only the requester's IP address and its version
 @app.get(
     "/api/address/",
     response_model=ClientAddressResponse,
@@ -296,39 +295,8 @@ async def get_requester_address(request: Request) -> ClientAddressResponse:
     return ClientAddressResponse(ip=str(address), version=address.version)
 
 
-# Route to get location details for the requester's IP address
 @app.get(
-    "/api/ip/",
-    response_model=ClientLocationResponse,
-    responses={
-        status.HTTP_400_BAD_REQUEST: {
-            "model": Message,
-            "description": "The given string is not a valid IP address",
-        },
-        status.HTTP_404_NOT_FOUND: {
-            "model": Message,
-            "description": "IP address not found in the GeoIP database",
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "model": Message,
-            "description": "An internal server error occurred while processing the request",
-        },
-        status.HTTP_200_OK: {
-            "description": "Location details retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "country": "Ukraine",
-                        "iso_code": "UA",
-                        "city": "Kropyvnytskyi",
-                        "ip": "192.168.1.1",
-                        "version": 4,
-                        "org": "Example ASN Organisation",
-                    }
-                }
-            },
-        },
-    },
+    "/api/ip/", response_model=ClientLocationResponse, responses=LOCATION_RESPONSES
 )
 async def get_requester_ip(request: Request) -> ClientLocationResponse:
     """
@@ -336,44 +304,13 @@ async def get_requester_ip(request: Request) -> ClientLocationResponse:
     Returns the country, city, and organisation along with the client's IP address.
     If GeoIP database or IP lookup fails, a 404 or 500 error will be raised.
     """
-    # Retrieve the client's IP address
-    client_ip = get_client_ip(request)
-    return lookup_ip(client_ip)
+    return lookup_ip(get_client_ip(request))
 
 
-# Route to get location details for a specific IP address
 @app.get(
     "/api/ip/{ip}/",
     response_model=ClientLocationResponse,
-    responses={
-        status.HTTP_400_BAD_REQUEST: {
-            "model": Message,
-            "description": "The given string is not a valid IP address",
-        },
-        status.HTTP_404_NOT_FOUND: {
-            "model": Message,
-            "description": "IP address not found in the GeoIP database",
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "model": Message,
-            "description": "Internal server error occurred while processing the request",
-        },
-        status.HTTP_200_OK: {
-            "description": "Location details retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "country": "Ukraine",
-                        "iso_code": "UA",
-                        "city": "Kropyvnytskyi",
-                        "ip": "192.168.1.1",
-                        "version": 4,
-                        "org": "Example ASN Organisation",
-                    }
-                }
-            },
-        },
-    },
+    responses=LOCATION_RESPONSES,
 )
 async def get_ip_location(ip: str) -> ClientLocationResponse:
     """
@@ -384,7 +321,6 @@ async def get_ip_location(ip: str) -> ClientLocationResponse:
     return lookup_ip(ip)
 
 
-# Route to get the resolvers seen during a DNS leak test
 @app.get(
     "/api/dns/{test_id}/",
     response_model=DnsLeakResponse,
@@ -393,10 +329,7 @@ async def get_ip_location(ip: str) -> ClientLocationResponse:
             "model": Message,
             "description": "The DNS leak test isn't enabled on this server",
         },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "model": Message,
-            "description": "An internal server error occurred while processing the request",
-        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: SERVER_ERROR_RESPONSE,
         status.HTTP_200_OK: {
             "description": "Resolvers retrieved successfully",
             "content": {
@@ -405,12 +338,8 @@ async def get_ip_location(ip: str) -> ClientLocationResponse:
                         "leak": False,
                         "resolvers": [
                             {
-                                "country": "Ukraine",
-                                "iso_code": "UA",
-                                "city": "Kropyvnytskyi",
+                                **LOCATION_EXAMPLE,
                                 "ip": "192.0.2.53",
-                                "version": 4,
-                                "org": "Example ASN Organisation",
                                 "same_network": True,
                             }
                         ],
