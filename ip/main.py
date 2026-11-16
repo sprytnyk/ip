@@ -12,10 +12,11 @@ from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError
 from pydantic import BaseModel
 
-import dnsleak
+from ip import dnsleak
 
-# Data files live next to this module, whatever the working directory is
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Data files live in the project root, one level up from this package,
+# whatever the working directory is
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GEOIP_CITY_DB_PATH = os.path.join(BASE_DIR, "city.mmdb")
 GEOIP_ASN_DB_PATH = os.path.join(BASE_DIR, "asn.mmdb")
 

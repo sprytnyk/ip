@@ -10,8 +10,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from starlette.requests import Request
 
-import dnsleak
-import main
+from ip import dnsleak, main
 
 TEST_ID = "0123456789abcdef0123456789abcdef"
 

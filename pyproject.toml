@@ -28,7 +28,7 @@ package = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# The app's modules sit in the project root, not in a package
+# The ip package isn't installed, so import it from the project root
 pythonpath = ["."]
 # Fail on warnings, so deprecations show up before they break things
 filterwarnings = ["error"]

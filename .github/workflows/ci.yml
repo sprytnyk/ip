@@ -80,4 +80,4 @@ jobs:
       - name: Build app image
         run: docker build --tag ip-api:ci .
       - name: Import the app
-        run: docker run --rm ip-api:ci python -c "import main"
+        run: docker run --rm ip-api:ci python -c "import ip.main"

@@ -14,7 +14,7 @@ import dns.rdatatype
 import dns.rrset
 import pytest
 
-import dnsleak
+from ip import dnsleak
 
 DOMAIN = "example.test"
 TEST_ID = "0123456789abcdef0123456789abcdef"

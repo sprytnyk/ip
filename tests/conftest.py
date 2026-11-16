@@ -10,8 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 from geoip2.errors import AddressNotFoundError
 
-import dnsleak
-import main
+from ip import dnsleak, main
 
 DOMAIN = "example.test"
 

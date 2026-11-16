@@ -3,11 +3,11 @@
 all: check
 
 run:
-	uv run uvicorn main:app --reload
+	uv run uvicorn ip.main:app --reload
 
 # the app with the DNS leak test on; its DNS server listens on port 5300
 run-dns:
-	DOMAIN=example.test uv run uvicorn main:app --reload
+	DOMAIN=example.test uv run uvicorn ip.main:app --reload
 
 check: lint test
 
