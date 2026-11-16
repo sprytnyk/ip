@@ -90,12 +90,12 @@ class Message(BaseModel):
 
 # Response examples and error descriptions for the API docs
 LOCATION_EXAMPLE = {
-    "country": "Ukraine",
-    "iso_code": "UA",
-    "city": "Kropyvnytskyi",
-    "ip": "192.168.1.1",
+    "country": "United States",
+    "iso_code": "US",
+    "city": "Unknown",
+    "ip": "8.8.8.8",
     "version": 4,
-    "org": "Example ASN Organisation",
+    "org": "Google LLC",
 }
 
 SERVER_ERROR_RESPONSE = {
@@ -344,13 +344,7 @@ async def get_ip_location(ip: str) -> ClientLocationResponse:
                 "application/json": {
                     "example": {
                         "leak": False,
-                        "resolvers": [
-                            {
-                                **LOCATION_EXAMPLE,
-                                "ip": "192.0.2.53",
-                                "same_network": True,
-                            }
-                        ],
+                        "resolvers": [{**LOCATION_EXAMPLE, "same_network": True}],
                     }
                 }
             },

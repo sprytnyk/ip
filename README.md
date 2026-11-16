@@ -38,8 +38,8 @@ so opening that page contacts those services.
 | `GET /api/dns/{id}/` | DNS resolvers seen for a leak test id, and whether DNS leaks    |
 
 ```console
-$ curl https://example.com/api/ip/192.0.2.10/
-{"country":"...","iso_code":"...","city":"...","ip":"192.0.2.10","version":4,"org":"..."}
+$ curl https://example.com/api/ip/8.8.8.8/
+{"country":"United States","iso_code":"US","city":"Unknown","ip":"8.8.8.8","version":4,"org":"Google LLC"}
 ```
 
 Errors return `{"detail": "..."}` with status 400 (not an IP address), 404 (not
