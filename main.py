@@ -14,8 +14,10 @@ from pydantic import BaseModel
 
 import dnsleak
 
-GEOIP_CITY_DB_PATH = "./city.mmdb"
-GEOIP_ASN_DB_PATH = "./asn.mmdb"
+# Data files live next to this module, whatever the working directory is
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+GEOIP_CITY_DB_PATH = os.path.join(BASE_DIR, "city.mmdb")
+GEOIP_ASN_DB_PATH = os.path.join(BASE_DIR, "asn.mmdb")
 
 # The DNS leak test serves dns.<DOMAIN>; without DOMAIN it's turned off.
 DOMAIN = os.environ.get("DOMAIN", "").strip().rstrip(".")
@@ -56,9 +58,13 @@ app = FastAPI(
 # which are separate origins. The API is public and uses no cookies.
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"])
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(BASE_DIR, "static")),
+    name="static",
+)
 
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 
 class ClientLocationResponse(BaseModel):
