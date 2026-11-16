@@ -140,6 +140,8 @@ dig @::1 -p 5300 "$(openssl rand -hex 16)-0.dns.example.test"
 | `make format` | Formats the code with ruff                               |
 | `make audit`  | Checks the locked dependencies for known vulnerabilities |
 
+The tests use a small fake GeoIP table, so they don't need the GeoLite2 files.
+
 Pre-commit runs ruff and hadolint on each commit:
 
 ```console
