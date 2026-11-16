@@ -1,9 +1,10 @@
 # ip
 
 A small web page and JSON API that shows your public IPv4 and IPv6 addresses,
-with the country, city and network (ASN) they belong to, plus a DNS leak
-test that shows which DNS resolvers look up names for you. Built with FastAPI,
-served behind Caddy, and looked up locally in the MaxMind GeoLite2 databases.
+with the country, city and network (ASN) they belong to. It also has a DNS
+leak test that shows which DNS resolvers look up names for you. It runs on
+FastAPI behind Caddy and looks addresses up in local copies of the MaxMind
+GeoLite2 databases.
 
 ![The home page with example addresses](docs/screenshot.png)
 
@@ -11,12 +12,12 @@ served behind Caddy, and looked up locally in the MaxMind GeoLite2 databases.
 
 Your data isn't collected:
 
-- Lookups happen against local GeoLite2 files. No address is sent to a
+- The app looks addresses up in local GeoLite2 files and sends none to a
   third-party service.
-- Nothing is written to a database or to disk; the API container runs with a
-  read-only filesystem.
-- The API runs uvicorn with `--no-access-log`, so requests aren't logged, and
-  error messages don't include the IP address.
+- The app writes nothing to a database or to disk, and the API container runs
+  with a read-only filesystem.
+- The API runs uvicorn with `--no-access-log`, so it doesn't log requests. The
+  errors it does log leave out the IP address.
 - Caddy has no `log` directive, so it doesn't write access logs either.
 - The home page uses no cookies, analytics or external scripts.
 - The DNS leak test keeps resolver addresses in memory only, under a random
@@ -53,26 +54,26 @@ address, the page fetches `/api/address/` from two subdomains:
 - `ipv4.<domain>` has only an A record, so the browser must connect over IPv4.
 - `ipv6.<domain>` has only an AAAA record, so the browser must connect over IPv6.
 
-If a fetch fails, that protocol is shown as "Not detected".
+If a fetch fails, the page shows that protocol as "Not detected".
 
 ## How the DNS leak test works
 
-`dns.<domain>` is delegated to a small authoritative DNS server that runs in
-the API container. The page picks a random 32-hex-digit test id and makes the
+An NS record delegates `dns.<domain>` to a small DNS server that runs in the
+API container. The page picks a random test id (32 hex digits) and makes the
 browser look up `<id>-0.dns.<domain>` to `<id>-5.dns.<domain>`. Whichever
-resolvers do those lookups for the browser have to ask this server, which
-records their addresses under the id and answers NXDOMAIN, so the lookups fail
-and no HTTP request is made. The page then fetches `/api/dns/<id>/` to list the
-resolvers.
+resolvers do those lookups for the browser have to ask this server. It saves
+their addresses under the id and answers that the name doesn't exist
+(NXDOMAIN), so the lookups fail and the browser makes no HTTP request. The page then
+fetches `/api/dns/<id>/` to list the resolvers.
 
 To tell whether DNS leaks, the API compares each resolver's network (its ASN
-organisation) with the network of the IP address that fetches the result. Each
+organisation) with the network of the address that asks for the result. Each
 resolver gets `same_network`, and `leak` is `true` if any resolver is on
-another network. Behind a VPN, that usually means DNS queries bypass the
-tunnel. It can also be a DNS provider you chose on purpose, such as a public
-resolver or your VPN's own DNS run from a different network, so the page calls
-it a possible leak. Both fields are `null` when a network can't be compared,
-e.g. when an address isn't in the GeoIP database.
+another network. Behind a VPN, that usually means DNS queries skip the tunnel.
+It can also be a DNS provider you picked on purpose, such as a public resolver
+or your VPN's own DNS on a different network, so the page calls it a possible
+leak. Both fields are `null` when the API can't compare the networks, for
+example when an address isn't in the GeoIP database.
 
 Run the lookups yourself to test resolvers outside the browser:
 
@@ -97,12 +98,12 @@ $ curl "https://example.com/api/dns/$id/"
    ```
 
    Open port 53 for UDP and TCP. If the host runs systemd-resolved, its stub
-   listener holds port 53; set `DNSStubListener=no` in
+   listener holds port 53. Set `DNSStubListener=no` in
    `/etc/systemd/resolved.conf` before starting the stack.
 2. Download the GeoLite2 City and ASN databases from
    [MaxMind](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/)
-   and save them as `city.mmdb` and `asn.mmdb` in the project root. They're
-   mounted read-only into the container, so updating them on the host is
+   and save them as `city.mmdb` and `asn.mmdb` in the project root. Docker
+   mounts them read-only into the container, so replacing them on the host is
    enough.
 3. Copy `.env.example` to `.env` and set `DOMAIN`.
 4. Start the stack:
@@ -111,7 +112,7 @@ $ curl "https://example.com/api/dns/$id/"
    docker compose up -d --build
    ```
 
-Caddy gets TLS certificates for all three hostnames automatically.
+Caddy gets TLS certificates for all three hostnames itself, with no setup.
 
 ## Development
 
@@ -121,8 +122,8 @@ uv pip install -r requirements.txt
 .venv/bin/uvicorn main:app --reload
 ```
 
-The DNS leak test is off unless `DOMAIN` is set. To try its DNS server
-locally, which listens on port 5300 (`DNS_PORT`):
+The DNS leak test is off unless `DOMAIN` is set. Its DNS server listens on
+port 5300, or on `DNS_PORT` if set. To try it locally:
 
 ```console
 DOMAIN=example.test .venv/bin/uvicorn main:app --reload
