@@ -1,7 +1,9 @@
-FROM python:3.15-slim-trixie
+# uv installs the dependencies from uv.lock. It's only mounted for that step
+# below, so it isn't in the final image, and scanners don't report the
+# libraries built into it.
+FROM ghcr.io/astral-sh/uv:0.12.23 AS uv
 
-# uv installs the dependencies from uv.lock
-COPY --from=ghcr.io/astral-sh/uv:0.12.23 /uv /usr/local/bin/uv
+FROM python:3.15-slim-trixie
 
 LABEL maintainer="Vladyslav Krylasov <vladyslav.krylasov@gmail.com>"
 
@@ -31,7 +33,8 @@ COPY pyproject.toml uv.lock ./
 # Install the locked app dependencies, without the dev group, into a venv that
 # uses the image's Python. Root owns the venv, so the app user can't change it.
 ENV UV_PYTHON_DOWNLOADS=never
-RUN uv sync --locked --no-dev --no-cache
+RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv \
+    uv sync --locked --no-dev --no-cache
 ENV PATH="${APP}/.venv/bin:${PATH}"
 
 # Copy only what the app needs: no .mmdb files, compose files or VCS metadata.
