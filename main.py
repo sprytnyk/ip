@@ -125,6 +125,9 @@ def get_client_ip(request: Request) -> str:
     Extracts the client's IP address from headers or request object.
     Checks 'X-Forwarded-For' and 'X-Real-IP' headers for the public IP.
     Falls back to the proxy IP if those headers are not found.
+
+    Raises:
+        HTTPException: If the request has no client address at all.
     """
     x_forwarded_for = request.headers.get("X-Forwarded-For")
     if x_forwarded_for:
@@ -133,6 +136,11 @@ def get_client_ip(request: Request) -> str:
     x_real_ip = request.headers.get("X-Real-IP")
     if x_real_ip:
         return x_real_ip
+    if request.client is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Couldn't determine the client's IP address.",
+        )
     return request.client.host
 
 
