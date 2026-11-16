@@ -196,16 +196,20 @@ class _UDPProtocol(asyncio.DatagramProtocol):
 @contextlib.asynccontextmanager
 async def serve(zone: LeakTestZone, port: int):
     """
-    Serves the zone over UDP and TCP on all addresses while the context is open.
+    Serves the zone over UDP and TCP on all addresses while the context is open,
+    and yields the port it listens on. Port 0 picks a free one.
     """
     loop = asyncio.get_running_loop()
     # "::" is dual-stack, so it receives IPv4 queries as IPv4-mapped addresses
     transport, _ = await loop.create_datagram_endpoint(
         lambda: _UDPProtocol(zone), local_addr=("::", port)
     )
-    server = await asyncio.start_server(zone.handle_tcp, port=port)
     try:
-        yield
+        port = transport.get_extra_info("sockname")[1]
+        server = await asyncio.start_server(zone.handle_tcp, port=port)
+        try:
+            yield port
+        finally:
+            server.close()
     finally:
         transport.close()
-        server.close()
