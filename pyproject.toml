@@ -1,0 +1,34 @@
+[project]
+name = "ip"
+description = "Shows your public IPv4 and IPv6 addresses, their location, and a DNS leak test"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "sprytnyk.dev" }]
+# CI tests this lowest version and 3.15, which the Docker image runs
+requires-python = ">=3.13"
+version = "0"
+dependencies = [
+    "dnspython>=2.9",
+    "fastapi>=0.162",
+    "geoip2>=5.3",
+    "jinja2>=3.1",
+    "uvicorn[standard]>=0.54",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16",
+    "pip-audit>=2.7",
+    "pytest>=8",
+    "ruff>=0.17",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The app's modules sit in the project root, not in a package
+pythonpath = ["."]
+# Fail on warnings, so deprecations show up before they break things
+filterwarnings = ["error"]

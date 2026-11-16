@@ -1,3 +1,5 @@
+# Install once: uvx pre-commit install
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -8,8 +10,9 @@ repos:
       - id: check-toml
       - id: check-merge-conflict
 
+  # keep rev in step with the ruff version in uv.lock, so the hook and CI agree
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.0
+    rev: v0.17.5
     hooks:
       - id: ruff-check
         args: [--fix]

@@ -116,26 +116,34 @@ Caddy gets TLS certificates for all three hostnames itself, with no setup.
 
 ## Development
 
+[uv](https://docs.astral.sh/uv/) manages the dependencies and locks them in
+`uv.lock`. The Docker image installs from the same file.
+
 ```console
-uv venv
-uv pip install -r requirements.txt
-.venv/bin/uvicorn main:app --reload
+uv sync
+make run
 ```
 
 The DNS leak test is off unless `DOMAIN` is set. Its DNS server listens on
 port 5300, or on `DNS_PORT` if set. To try it locally:
 
 ```console
-DOMAIN=example.test .venv/bin/uvicorn main:app --reload
+make run-dns
 dig @::1 -p 5300 "$(openssl rand -hex 16)-0.dns.example.test"
 ```
 
-Linting and formatting run through [pre-commit](https://pre-commit.com/)
-(ruff and hadolint):
+| Command       | What it does                                             |
+| ------------- | -------------------------------------------------------- |
+| `make check`  | Lint and tests, the same as CI                           |
+| `make test`   | Tests only                                               |
+| `make lint`   | `ruff check` and `ruff format --check`                   |
+| `make format` | Formats the code with ruff                               |
+| `make audit`  | Checks the locked dependencies for known vulnerabilities |
+
+Pre-commit runs ruff and hadolint on each commit:
 
 ```console
-pre-commit install
-pre-commit run --all-files
+uvx pre-commit install
 ```
 
 ## License

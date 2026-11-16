@@ -23,7 +23,7 @@ jobs:
 
       # Report only: findings go to the Security tab and never fail the run.
 
-      - name: Scan requirements.txt
+      - name: Scan uv.lock
         id: scan-requirements
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         with:
