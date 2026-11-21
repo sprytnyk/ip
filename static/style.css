@@ -1,0 +1,637 @@
+/* The look of Loka's page and the Color Your World theme: a soft glow and a
+   faint dot grid behind the page, a sticky see-through header, see-through
+   cards. Blue and slate, in light and dark. */
+
+:root {
+    color-scheme: light;
+    --bg: #f8fafc;
+    --glow: #2563eb1f;
+    --dots: #0f172a14;
+    --ink: #1e293b;
+    --strong: #020617;
+    --muted: #64748b;
+    --label: #334155;
+    --line: #0f172a14;
+    --line-strong: #0f172a24;
+    --card: #ffffffcc;
+    --item: #f8fafccc;
+    --highlight: inset 0 1px 0 #ffffffe6;
+    --shadow: 0 1px 2px #0f172a0a, 0 12px 32px -16px #0f172a29;
+    --accent: #2563eb;
+    --accent-top: #3b82f6;
+    --accent-glow: #2563eb73;
+    --soft: #2563eb14;
+    --soft-line: #2563eb2e;
+    --icon: #2563eb;
+    --link: #2563eb;
+    --header: #f8fafcb3;
+    --button-hover: #f1f5f9;
+    --title: linear-gradient(100deg, #020617 35%, #2563eb);
+    --ok: #047857;
+    --ok-bg: #ecfdf5cc;
+    --ok-line: #a7f3d0;
+    --bad: #be123c;
+    --bad-bg: #fff1f2cc;
+    --bad-line: #fecdd3;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #020617;
+    --glow: #3b82f62e;
+    --dots: #94a3b81a;
+    --ink: #cbd5e1;
+    --strong: #f8fafc;
+    --muted: #94a3b8;
+    --label: #cbd5e1;
+    --line: #94a3b81f;
+    --line-strong: #94a3b838;
+    --card: #0f172a99;
+    --item: #1e293b66;
+    --highlight: inset 0 1px 0 #ffffff0a;
+    --shadow: 0 12px 40px -16px #000c;
+    --accent-glow: #3b82f666;
+    --soft: #3b82f61f;
+    --soft-line: #60a5fa40;
+    --icon: #93c5fd;
+    --link: #93c5fd;
+    --header: #020617a6;
+    --button-hover: #334155b3;
+    --title: linear-gradient(100deg, #f8fafc 35%, #93c5fd);
+    --ok: #34d399;
+    --ok-bg: #10b9811a;
+    --ok-line: #10b98166;
+    --bad: #fb7185;
+    --bad-bg: #f43f5e1a;
+    --bad-line: #f43f5e66;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+}
+
+::selection {
+    background: var(--soft-line);
+}
+
+body {
+    margin: 0;
+    /* 100vw counts a classic scrollbar, so the header would stick out */
+    overflow-x: clip;
+    background: radial-gradient(70rem 32rem at 50% -12rem, var(--glow), transparent 70%) no-repeat, var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 "Inter var", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* A faint dot grid that fades out down the page */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(var(--dots) 1px, transparent 1px) 0 0 / 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 50% at 50% 0, #000, transparent);
+    mask-image: radial-gradient(ellipse 80% 50% at 50% 0, #000, transparent);
+}
+
+p, h1, h2 {
+    margin: 0;
+}
+
+a {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.15s;
+}
+
+a:hover {
+    text-decoration-color: currentColor;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    max-width: 56rem;
+    margin: auto;
+    padding: 0 28px 16px;
+}
+
+/* Header */
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 20px;
+    /* Full window width, with the content lined up with the cards. The
+       percentages are of the page column's width. */
+    margin: 0 calc(50% - 50vw);
+    padding: 12px calc(50vw - 50%);
+    background: var(--header);
+    border-bottom: 1px solid var(--line);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    backdrop-filter: saturate(180%) blur(14px);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--strong);
+    text-decoration: none;
+}
+
+.logo {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: linear-gradient(140deg, var(--accent-top), #1d4ed8);
+    color: #fff;
+    box-shadow: 0 6px 16px -4px var(--accent-glow), inset 0 1px 0 #ffffff40;
+}
+
+.logo svg {
+    stroke-width: 2;
+}
+
+.brand-name {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon-button,
+.pill-link {
+    display: grid;
+    place-items: center;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--card);
+    color: var(--label);
+    box-shadow: var(--highlight);
+    transition: background 0.15s, color 0.15s;
+}
+
+.icon-button {
+    width: 34px;
+    padding: 0;
+    cursor: pointer;
+}
+
+.pill-link {
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.icon-button:hover,
+.pill-link:hover {
+    background: var(--button-hover);
+    color: var(--strong);
+}
+
+[data-theme="light"] .sun,
+[data-theme="dark"] .moon {
+    display: none;
+}
+
+/* Title */
+
+.intro {
+    padding: 52px 0 32px;
+}
+
+h1 {
+    display: inline-block;
+    padding-bottom: 0.08em;
+    background: var(--title);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: clamp(32px, 4.4vw, 52px);
+    line-height: 1.04;
+    letter-spacing: -0.05em;
+    font-weight: 750;
+}
+
+/* Cards */
+
+.cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+main > .cards:first-child {
+    padding-top: 40px;
+}
+
+.card {
+    min-width: 0;
+    padding: 20px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: var(--highlight), var(--shadow);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    transition: border-color 0.2s;
+    animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.card:hover {
+    border-color: var(--line-strong);
+}
+
+.card:nth-child(2) { animation-delay: 0.05s; }
+.card:nth-child(3) { animation-delay: 0.1s; }
+
+@keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+}
+
+.card-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.section-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--soft);
+    color: var(--icon);
+    box-shadow: inset 0 0 0 1px var(--soft-line);
+}
+
+.card-heading h2 {
+    color: var(--strong);
+    font-size: 15px;
+    line-height: 1.3;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+}
+
+.card-heading p {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* The main card: the address as the headline, the location under it */
+
+.hero {
+    padding: 28px;
+}
+
+.hero-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hero h1 {
+    padding: 0;
+    background: none;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+
+/* Inline-block, so the fade into blue spans the address, not the card */
+.hero-ip {
+    display: inline-block;
+    max-width: 100%;
+    margin-top: 10px;
+    padding-bottom: 0.08em;
+    background: var(--title);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: clamp(36px, 7vw, 64px);
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+}
+
+/* IPv6 addresses are up to 39 characters long */
+.hero-ip.v6 {
+    font-size: clamp(24px, 4.2vw, 40px);
+    letter-spacing: -0.03em;
+}
+
+.other-ip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.other-ip .value.ip {
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+
+.facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 24px -28px -28px;
+    border-top: 1px solid var(--line);
+}
+
+.facts > div {
+    min-width: 0;
+    padding: 16px 28px 20px;
+}
+
+.facts > div + div {
+    border-left: 1px solid var(--line);
+}
+
+.facts dt {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.facts dt svg {
+    width: 15px;
+    height: 15px;
+    color: var(--icon);
+}
+
+.facts dd {
+    margin: 4px 0 0;
+    color: var(--strong);
+    font-size: 16px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+/* Rows inside cards */
+
+.items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    padding: 12px 14px;
+    background: var(--item);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow-wrap: anywhere;
+    transition: border-color 0.15s;
+}
+
+.item:hover {
+    border-color: var(--line-strong);
+}
+
+.tag {
+    flex: none;
+    min-width: 46px;
+    padding: 2px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 99px;
+    color: var(--muted);
+    font: 600 11px/1.6 var(--mono);
+    text-align: center;
+}
+
+.value {
+    color: var(--strong);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.value.ip {
+    font: 600 18px/1.4 var(--mono);
+    letter-spacing: -0.02em;
+}
+
+.value.muted {
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.detail {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* DNS leak test */
+
+/* A resolver: tag, address and badge on one line, the location under them.
+   On phones the badge goes under the location. */
+.resolver {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "tag value badge" ". detail badge";
+    gap: 2px 14px;
+    align-items: center;
+}
+
+.resolver .tag { grid-area: tag; }
+.resolver .value { grid-area: value; }
+.resolver .detail { grid-area: detail; margin: 0; }
+.resolver .badge { grid-area: badge; }
+
+.badge {
+    flex: none;
+    padding: 2px 9px;
+    border: 1px solid;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge:empty {
+    display: none;
+}
+
+.badge.ok {
+    background: var(--ok-bg);
+    border-color: var(--ok-line);
+    color: var(--ok);
+}
+
+.badge.leak {
+    background: var(--bad-bg);
+    border-color: var(--bad-line);
+    color: var(--bad);
+}
+
+.verdict {
+    margin-bottom: 12px;
+    padding: 12px 15px;
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    background: var(--item);
+}
+
+.verdict[hidden] {
+    display: none;
+}
+
+.verdict-title {
+    color: var(--strong);
+    font-weight: 650;
+}
+
+.verdict-text {
+    margin-top: 2px;
+    color: var(--label);
+    font-size: 13px;
+}
+
+.verdict.ok {
+    background: var(--ok-bg);
+    border-color: var(--ok-line);
+}
+
+.verdict.ok .verdict-title {
+    color: var(--ok);
+}
+
+.verdict.leak {
+    background: var(--bad-bg);
+    border-color: var(--bad-line);
+}
+
+.verdict.leak .verdict-title {
+    color: var(--bad);
+}
+
+/* Error page */
+
+.button {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 9px 15px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--accent-top), var(--accent));
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 1px 2px #0f172a26, 0 4px 12px -4px var(--accent-glow), inset 0 1px 0 #ffffff33;
+    transition: filter 0.15s;
+}
+
+.button:hover {
+    filter: brightness(1.08);
+}
+
+.section-icon.bad {
+    background: var(--bad-bg);
+    color: var(--bad);
+    box-shadow: inset 0 0 0 1px var(--bad-line);
+}
+
+/* Footer */
+
+.footer {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-top: auto;
+    padding-top: 28px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.footer a {
+    color: var(--muted);
+}
+
+.footer a:hover {
+    color: var(--strong);
+}
+
+@media (max-width: 720px) {
+    .page { padding: 0 16px 24px; }
+    .topbar { padding-block: 10px; }
+    .intro { padding: 32px 0 22px; }
+    .cards { gap: 12px; }
+    .card { padding: 18px; border-radius: 18px; }
+    main > .cards:first-child { padding-top: 24px; }
+    .hero { padding: 22px 20px; }
+    .facts { grid-template-columns: minmax(0, 1fr); margin: 20px -20px -22px; }
+    .facts > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 12px 20px; }
+    .facts > div + div { border-left: 0; border-top: 1px solid var(--line); }
+    .facts dd { margin: 0; text-align: right; font-size: 15px; }
+    .resolver { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "tag value" ". detail" ". badge"; }
+    .resolver .badge { justify-self: start; margin-top: 6px; }
+    .value.ip { font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before {
+        animation: none !important;
+        transition: none !important;
+    }
+}

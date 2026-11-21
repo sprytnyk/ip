@@ -1,518 +1,190 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What's My IP</title>
-    <meta name="description" content="Check your IP address and location details instantly">
+{% extends "base.html" %}
 
-    <!-- Web App Manifest -->
-    <link rel="manifest" href="/static/site.webmanifest">
-
-    <!-- Favicons -->
-    <link rel="icon" href="/static/favicon.ico" sizes="any">
-    <link rel="icon" type="image/png" href="/static/favicon-16x16.png" sizes="16x16">
-    <link rel="icon" type="image/png" href="/static/favicon-32x32.png" sizes="32x32">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-
-    <!-- Meta Tags for App Branding -->
-    <meta name="theme-color" content="#0f172a">
-    <meta name="background-color" content="#0f172a">
-
-    <style>
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background: linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a);
-            color: #e2e8f0;
-            line-height: 1.5;
-        }
-
-        .page {
-            max-width: 42rem;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .icon-box {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 5rem;
-            height: 5rem;
-            background-color: #2563eb;
-            border-radius: 1rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-
-        .icon-box svg {
-            width: 2.5rem;
-            height: 2.5rem;
-            color: #fff;
-        }
-
-        h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 1rem;
-            line-height: 1;
-        }
-
-        .subtitle {
-            font-size: 1.125rem;
-            color: #94a3b8;
-        }
-
-        .card {
-            background-color: #1e293b;
-            border-radius: 1.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            padding: 2rem;
-            border: 1px solid #334155;
-            margin-bottom: 2rem;
-        }
-
-        .info-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .info-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            padding: 1rem;
-            background-color: rgba(51, 65, 85, 0.5);
-            border-radius: 0.75rem;
-            transition: background-color 0.15s ease;
-        }
-
-        .info-row:hover {
-            background-color: #334155;
-        }
-
-        .row-icon {
-            width: 3rem;
-            height: 3rem;
-            border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .row-icon svg {
-            width: 1.5rem;
-            height: 1.5rem;
-        }
-
-        .row-icon.blue { background-color: rgba(59, 130, 246, 0.2); }
-        .row-icon.blue svg { color: #60a5fa; }
-
-        .row-icon.emerald { background-color: rgba(16, 185, 129, 0.2); }
-        .row-icon.emerald svg { color: #34d399; }
-
-        .row-icon.purple { background-color: rgba(139, 92, 246, 0.2); }
-        .row-icon.purple svg { color: #a78bfa; }
-
-        .row-icon.amber { background-color: rgba(245, 158, 11, 0.2); }
-        .row-icon.amber svg { color: #fbbf24; }
-
-        .row-icon.rose { background-color: rgba(244, 63, 94, 0.2); }
-        .row-icon.rose svg { color: #fb7185; }
-
-        .row-content {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .row-label {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #94a3b8;
-            margin-bottom: 0.25rem;
-        }
-
-        .row-value {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #fff;
-            word-break: break-all;
-        }
-
-        .row-value.muted {
-            color: #94a3b8;
-        }
-
-        .row-detail {
-            font-size: 0.875rem;
-            color: #cbd5e1;
-            margin-top: 0.25rem;
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 0.5rem;
-        }
-
-        .card-note {
-            font-size: 0.875rem;
-            color: #94a3b8;
-            margin-bottom: 1.5rem;
-        }
-
-        .verdict {
-            padding: 1rem;
-            border-radius: 0.75rem;
-            border: 1px solid;
-            margin-bottom: 1rem;
-        }
-
-        .verdict[hidden] {
-            display: none;
-        }
-
-        .verdict-title {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .verdict-text {
-            font-size: 0.875rem;
-            color: #cbd5e1;
-        }
-
-        .verdict.ok {
-            background-color: rgba(16, 185, 129, 0.1);
-            border-color: rgba(16, 185, 129, 0.4);
-        }
-        .verdict.ok .verdict-title { color: #34d399; }
-
-        .verdict.leak {
-            background-color: rgba(244, 63, 94, 0.1);
-            border-color: rgba(244, 63, 94, 0.4);
-        }
-        .verdict.leak .verdict-title { color: #fb7185; }
-
-        .verdict.unknown {
-            background-color: rgba(148, 163, 184, 0.1);
-            border-color: rgba(148, 163, 184, 0.4);
-        }
-        .verdict.unknown .verdict-title { color: #cbd5e1; }
-
-        .badge {
-            display: inline-block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.125rem 0.5rem;
-            border-radius: 9999px;
-            margin-left: 0.5rem;
-            vertical-align: middle;
-        }
-
-        .badge:empty {
-            display: none;
-        }
-
-        .badge.ok {
-            background-color: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-        }
-
-        .badge.leak {
-            background-color: rgba(244, 63, 94, 0.2);
-            color: #fb7185;
-        }
-
-        .footer {
-            text-align: center;
-            font-size: 0.875rem;
-            color: #94a3b8;
-            line-height: 1.8;
-        }
-
-        .footer a {
-            color: #60a5fa;
-            text-decoration: none;
-            transition: color 0.15s ease;
-        }
-
-        .footer a:hover {
-            color: #93c5fd;
-        }
-
-        @keyframes fade-in {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-fade-in {
-            animation: fade-in 0.5s ease-out;
-        }
-
-        @media screen and (max-width: 640px) {
-            h1 { font-size: 2.25rem; }
-            .card { padding: 1.25rem; }
-            .row-value { font-size: 1.1rem; }
-        }
-    </style>
-</head>
-<body>
-    <div class="page">
-        <div class="header">
-            <h1>What's My IP</h1>
+{% block content %}
+{% set other = 6 if data.version == 4 else 4 %}
+<div class="cards">
+    <section class="card hero">
+        <div class="hero-top">
+            <h1>Your IP address</h1>
+            <span class="tag">IPv{{ data.version }}</span>
         </div>
+        <p class="hero-ip v{{ data.version }}">{% for part in data.ip.split(":") %}{{ part }}{% if not loop.last %}:<wbr>{% endif %}{% endfor %}</p>
+        <p class="other-ip">
+            <span class="tag">IPv{{ other }}</span>
+            <span class="value ip muted" data-probe="{{ other }}">Not detected</span>
+        </p>
+        <dl class="facts">
+            <div>
+                <dt>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>
+                    Country
+                </dt>
+                <dd>{{ data.country }} ({{ data.iso_code }})</dd>
+            </div>
+            <div>
+                <dt>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    City
+                </dt>
+                <dd>{{ data.city }}</dd>
+            </div>
+            <div>
+                <dt>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="7" rx="2"/><rect x="2" y="14" width="20" height="7" rx="2"/><path d="M6 6.5h.01M6 17.5h.01"/></svg>
+                    Organisation
+                </dt>
+                <dd>{{ data.org }}</dd>
+            </div>
+        </dl>
+    </section>
 
-        <div class="card">
-            <div class="info-list animate-fade-in">
-                <!-- IPv4 and IPv6 Addresses -->
-                {% for version in (4, 6) %}
-                <div class="info-row">
-                    <div class="row-icon {{ 'blue' if version == 4 else 'purple' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="4" x2="20" y1="9" y2="9"></line>
-                            <line x1="4" x2="20" y1="15" y2="15"></line>
-                            <line x1="10" x2="8" y1="3" y2="21"></line>
-                            <line x1="16" x2="14" y1="3" y2="21"></line>
-                        </svg>
-                    </div>
-                    <div class="row-content">
-                        <p class="row-label">IPv{{ version }}</p>
-                        {% if data.version == version %}
-                        <p class="row-value">{{ data.ip }}</p>
-                        {% else %}
-                        <p class="row-value muted" data-probe="{{ version }}">Not detected</p>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-
-                <!-- Country -->
-                <div class="info-row">
-                    <div class="row-icon emerald">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                            <line x1="4" x2="4" y1="22" y2="15"></line>
-                        </svg>
-                    </div>
-                    <div class="row-content">
-                        <p class="row-label">Country</p>
-                        <p class="row-value">{{ data.country }} ({{ data.iso_code }})</p>
-                    </div>
-                </div>
-
-                <!-- City -->
-                <div class="info-row">
-                    <div class="row-icon amber">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                    </div>
-                    <div class="row-content">
-                        <p class="row-label">City</p>
-                        <p class="row-value">{{ data.city }}</p>
-                    </div>
-                </div>
-
-                <!-- Organisation -->
-                <div class="info-row">
-                    <div class="row-icon rose">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path>
-                            <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path>
-                            <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path>
-                            <path d="M10 6h4"></path>
-                            <path d="M10 10h4"></path>
-                            <path d="M10 14h4"></path>
-                            <path d="M10 18h4"></path>
-                        </svg>
-                    </div>
-                    <div class="row-content">
-                        <p class="row-label">Organisation</p>
-                        <p class="row-value">{{ data.org }}</p>
-                    </div>
-                </div>
+    {% if dns_zone %}
+    <section class="card">
+        <div class="card-heading">
+            <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3a15 15 0 0 1 4 9 15 15 0 0 1-4 9 15 15 0 0 1-4-9 15 15 0 0 1 4-9z"/><circle cx="12" cy="12" r="9"/></svg>
+            </span>
+            <div>
+                <h2>DNS resolvers</h2>
+                <p>The servers that look up domain names for you, compared with the network your IP address belongs to.</p>
             </div>
         </div>
-
-        {% if dns_zone %}
-        <div class="card">
-            <h2 class="card-title">DNS resolvers</h2>
-            <p class="card-note">
-                The servers that look up domain names for you, compared with the
-                network your IP address belongs to.
-            </p>
-            <div class="verdict" id="dns-verdict" hidden>
-                <p class="verdict-title"></p>
-                <p class="verdict-text"></p>
-            </div>
-            <div class="info-list animate-fade-in" id="dns-leak" data-zone="{{ dns_zone }}">
-                <div class="info-row">
-                    <div class="row-content">
-                        <p class="row-value muted">Checking…</p>
-                    </div>
-                </div>
-            </div>
-            <template id="dns-resolver">
-                <div class="info-row">
-                    <div class="row-icon blue">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
-                            <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
-                            <line x1="6" x2="6.01" y1="6" y2="6"></line>
-                            <line x1="6" x2="6.01" y1="18" y2="18"></line>
-                        </svg>
-                    </div>
-                    <div class="row-content">
-                        <p class="row-label"><span></span><span class="badge"></span></p>
-                        <p class="row-value"></p>
-                        <p class="row-detail"></p>
-                    </div>
-                </div>
-            </template>
+        <div class="verdict" id="dns-verdict" role="status" hidden>
+            <p class="verdict-title"></p>
+            <p class="verdict-text"></p>
         </div>
-        {% endif %}
-
-        <div class="footer">
-            <p>Data provided by <a href="https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/" target="_blank" rel="noopener noreferrer">MaxMind GeoIP2 Lite</a>.</p>
-            <p>View the <a href="/docs" target="_blank" rel="noopener noreferrer">API Documentation</a>.</p>
-            <p>Your data isn't collected. Check this <a href="https://github.com/sprytnyk/ip" target="_blank" rel="noopener noreferrer">GitHub repository</a>.</p>
+        <div class="items" id="dns-leak" data-zone="{{ dns_zone }}">
+            <div class="item">
+                <p class="value muted">Checking…</p>
+            </div>
         </div>
-    </div>
+        <template id="dns-resolver">
+            <div class="item resolver">
+                <span class="tag"></span>
+                <p class="value ip"></p>
+                <p class="detail"></p>
+                <span class="badge"></span>
+            </div>
+        </template>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
 
-    <script>
-        // A request reaches the server over one protocol only, so the address
-        // on the other protocol comes from a subdomain that has only an A
-        // record (ipv4.) or only an AAAA record (ipv6.).
-        const baseHost = location.host.replace(/^ipv[46]\./, "");
+{% block scripts %}
+<script>
+    // A request reaches the server over one protocol only, so the address
+    // on the other protocol comes from a subdomain that has only an A
+    // record (ipv4.) or only an AAAA record (ipv6.).
+    const baseHost = location.host.replace(/^ipv[46]\./, "");
 
-        document.querySelectorAll("[data-probe]").forEach(async (el) => {
-            const version = Number(el.dataset.probe);
-            el.textContent = "Checking…";
+    document.querySelectorAll("[data-probe]").forEach(async (el) => {
+        const version = Number(el.dataset.probe);
+        el.textContent = "Checking…";
+        try {
+            const response = await fetch(
+                `${location.protocol}//ipv${version}.${baseHost}/api/address/`,
+                { cache: "no-store", signal: AbortSignal.timeout(5000) },
+            );
+            const data = await response.json();
+            if (!response.ok || data.version !== version) throw new Error();
+            el.textContent = data.ip;
+            el.classList.remove("muted");
+        } catch {
+            el.textContent = "Not detected";
+        }
+    });
+
+    // DNS leak test: look up random names under dns.<domain>, whose
+    // nameserver records which resolvers asked, then fetch that list.
+    // The lookups fail with NXDOMAIN by design; only the query matters.
+    const dnsLeak = document.getElementById("dns-leak");
+    if (dnsLeak) {
+        const verdict = document.getElementById("dns-verdict");
+        const showVerdict = (kind, title, text) => {
+            verdict.className = `verdict ${kind}`;
+            verdict.querySelector(".verdict-title").textContent = title;
+            verdict.querySelector(".verdict-text").textContent = text;
+            verdict.hidden = false;
+        };
+
+        const showMessage = (text) => {
+            const row = document.createElement("div");
+            row.className = "item";
+            row.innerHTML = '<p class="value muted"></p>';
+            row.querySelector("p").textContent = text;
+            dnsLeak.replaceChildren(row);
+        };
+
+        (async () => {
+            const testId = Array.from(
+                crypto.getRandomValues(new Uint8Array(16)),
+                (byte) => byte.toString(16).padStart(2, "0"),
+            ).join("");
+            // Several lookups, so resolvers that share the load all show up
+            await Promise.allSettled(
+                Array.from({ length: 6 }, (_, n) =>
+                    fetch(`https://${testId}-${n}.${dnsLeak.dataset.zone}/`, {
+                        mode: "no-cors",
+                        cache: "no-store",
+                        signal: AbortSignal.timeout(5000),
+                    }),
+                ),
+            );
+
             try {
-                const response = await fetch(
-                    `${location.protocol}//ipv${version}.${baseHost}/api/address/`,
-                    { cache: "no-store", signal: AbortSignal.timeout(5000) },
-                );
-                const data = await response.json();
-                if (!response.ok || data.version !== version) throw new Error();
-                el.textContent = data.ip;
-                el.classList.remove("muted");
-            } catch {
-                el.textContent = "Not detected";
-            }
-        });
-
-        // DNS leak test: look up random names under dns.<domain>, whose
-        // nameserver records which resolvers asked, then fetch that list.
-        // The lookups fail with NXDOMAIN by design; only the query matters.
-        const dnsLeak = document.getElementById("dns-leak");
-        if (dnsLeak) {
-            const verdict = document.getElementById("dns-verdict");
-            const showVerdict = (kind, title, text) => {
-                verdict.className = `verdict ${kind}`;
-                verdict.querySelector(".verdict-title").textContent = title;
-                verdict.querySelector(".verdict-text").textContent = text;
-                verdict.hidden = false;
-            };
-
-            const showMessage = (text) => {
-                const row = document.createElement("div");
-                row.className = "info-row";
-                row.innerHTML = '<div class="row-content"><p class="row-value muted"></p></div>';
-                row.querySelector("p").textContent = text;
-                dnsLeak.replaceChildren(row);
-            };
-
-            (async () => {
-                const testId = Array.from(
-                    crypto.getRandomValues(new Uint8Array(16)),
-                    (byte) => byte.toString(16).padStart(2, "0"),
-                ).join("");
-                // Several lookups, so resolvers that share the load all show up
-                await Promise.allSettled(
-                    Array.from({ length: 6 }, (_, n) =>
-                        fetch(`https://${testId}-${n}.${dnsLeak.dataset.zone}/`, {
-                            mode: "no-cors",
-                            cache: "no-store",
-                            signal: AbortSignal.timeout(5000),
-                        }),
-                    ),
-                );
-
-                try {
-                    const response = await fetch(`/api/dns/${testId}/`, { cache: "no-store" });
-                    if (!response.ok) throw new Error();
-                    const { leak, resolvers } = await response.json();
-                    if (resolvers.length === 0) {
-                        showMessage("No resolvers detected");
-                        return;
-                    }
-                    const outside = resolvers.filter((resolver) => resolver.same_network === false);
-                    if (leak === true) {
-                        const orgs = [...new Set(outside.map((resolver) => resolver.org))].join(", ");
-                        showVerdict(
-                            "leak",
-                            "Possible DNS leak",
-                            `Resolvers on a different network than your IP address: ${outside.length} of ${resolvers.length} (${orgs}). ` +
-                            "If you use a VPN and these aren't your VPN's or a DNS provider you chose, " +
-                            "your DNS queries bypass the VPN, and whoever runs them can see the sites you visit.",
-                        );
-                    } else if (leak === false) {
-                        showVerdict(
-                            "ok",
-                            "No DNS leak detected",
-                            "All resolvers belong to the same network as your IP address, so your DNS queries take the same route as the rest of your traffic.",
-                        );
-                    } else {
-                        showVerdict(
-                            "unknown",
-                            "Can't tell whether DNS leaks",
-                            "Some addresses aren't in the GeoIP database, so their networks can't be compared.",
-                        );
-                    }
-
-                    const template = document.getElementById("dns-resolver");
-                    dnsLeak.replaceChildren(...resolvers.map((resolver) => {
-                        const row = template.content.cloneNode(true);
-                        const [label, value, detail] = row.querySelectorAll("p");
-                        const [version, badge] = label.querySelectorAll("span");
-                        version.textContent = `IPv${resolver.version}`;
-                        if (resolver.same_network === true) {
-                            badge.textContent = "Your network";
-                            badge.classList.add("ok");
-                        } else if (resolver.same_network === false) {
-                            badge.textContent = "Other network";
-                            badge.classList.add("leak");
-                        }
-                        value.textContent = resolver.ip;
-                        detail.textContent = `${resolver.city}, ${resolver.country} (${resolver.iso_code}) · ${resolver.org}`;
-                        return row;
-                    }));
-                } catch {
-                    showMessage("Test failed");
+                const response = await fetch(`/api/dns/${testId}/`, { cache: "no-store" });
+                if (!response.ok) throw new Error();
+                const { leak, resolvers } = await response.json();
+                if (resolvers.length === 0) {
+                    showMessage("No resolvers detected");
+                    return;
                 }
-            })();
-        }
-    </script>
-</body>
-</html>
+                const outside = resolvers.filter((resolver) => resolver.same_network === false);
+                if (leak === true) {
+                    const orgs = [...new Set(outside.map((resolver) => resolver.org))].join(", ");
+                    showVerdict(
+                        "leak",
+                        "Possible DNS leak",
+                        `Resolvers on a different network than your IP address: ${outside.length} of ${resolvers.length} (${orgs}). ` +
+                        "If you use a VPN and these aren't your VPN's or a DNS provider you chose, " +
+                        "your DNS queries bypass the VPN, and whoever runs them can see the sites you visit.",
+                    );
+                } else if (leak === false) {
+                    showVerdict(
+                        "ok",
+                        "No DNS leak detected",
+                        "All resolvers belong to the same network as your IP address, so your DNS queries take the same route as the rest of your traffic.",
+                    );
+                } else {
+                    showVerdict(
+                        "unknown",
+                        "Can't tell whether DNS leaks",
+                        "Some addresses aren't in the GeoIP database, so their networks can't be compared.",
+                    );
+                }
+
+                const template = document.getElementById("dns-resolver");
+                dnsLeak.replaceChildren(...resolvers.map((resolver) => {
+                    const row = template.content.cloneNode(true);
+                    row.querySelector(".tag").textContent = `IPv${resolver.version}`;
+                    row.querySelector(".value").textContent = resolver.ip;
+                    row.querySelector(".detail").textContent =
+                        `${resolver.city}, ${resolver.country} (${resolver.iso_code}) · ${resolver.org}`;
+                    const badge = row.querySelector(".badge");
+                    if (resolver.same_network === true) {
+                        badge.textContent = "Your network";
+                        badge.classList.add("ok");
+                    } else if (resolver.same_network === false) {
+                        badge.textContent = "Other network";
+                        badge.classList.add("leak");
+                    }
+                    return row;
+                }));
+            } catch {
+                showMessage("Test failed");
+            }
+        })();
+    }
+</script>
+{% endblock %}
