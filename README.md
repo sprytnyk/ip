@@ -1,5 +1,7 @@
 # ip
 
+![AI Generated](https://img.shields.io/badge/AI-generated-orange)
+
 A small web page and JSON API that shows your public IPv4 and IPv6 addresses,
 with the country, city and network (ASN) they belong to. It also has a DNS
 leak test that shows which DNS resolvers look up names for you. It runs on
