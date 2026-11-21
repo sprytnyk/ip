@@ -6,7 +6,9 @@ leak test that shows which DNS resolvers look up names for you. It runs on
 FastAPI behind Caddy and looks addresses up in local copies of the MaxMind
 GeoLite2 databases.
 
-![The home page with example addresses](docs/screenshot.png)
+| Light | Dark |
+| --- | --- |
+| ![The home page in the light theme, with example addresses](docs/screenshot-light.png) | ![The home page in the dark theme, with example addresses](docs/screenshot-dark.png) |
 
 ## Privacy
 
