@@ -1,7 +1,7 @@
 # uv installs the dependencies from uv.lock. It's only mounted for that step
 # below, so it isn't in the final image, and scanners don't report the
 # libraries built into it.
-FROM ghcr.io/astral-sh/uv:0.12.23 AS uv
+FROM ghcr.io/astral-sh/uv:0.13.10 AS uv
 
 FROM python:3.15-slim-trixie
 
